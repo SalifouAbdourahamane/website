@@ -1,0 +1,95 @@
+// @ts-nocheck — ported verbatim from ~/Desktop/Namu/lab-web-mastery/studies/icons.js (tested there).
+// Client-only: call these from useEffect. TODO: add types.
+const global: any = typeof window !== "undefined" ? window : {};
+
+/* Namu AI Lab icons — one grammar for every glyph.
+ *
+ * 24 × 24 master, live area 2–22 (2 px padding), stroke 1.25 at 24 px,
+ * round caps and joins, corner radius 1.5. Fills only for play, pause, stop
+ * and the Blossom's dot (which takes the accent colour). Outbound links use
+ * the 45° arrow; in-site links use the long arrow with a chevron head. Every
+ * stroked path carries pathLength="1" so it can be drawn on.
+ *
+ * No brains, no circuits, no globes, no sparkles, no spinners. Third-party
+ * marks (GitHub, Hugging Face, arXiv) use their own official logos.
+ */
+
+  const F = d => ({ d, fill: "solid" });   // filled glyph part
+  const DOT = d => ({ d, fill: "dot" });   // the Blossom dot, in the accent
+
+  const ICONS = {
+    // ---- navigation and apparatus
+    "arrow-long": ["M3 12h17", "M14.5 6.5L20 12l-5.5 5.5"],
+    "external": ["M7 17L17 7", "M9 7h8v8"],
+    "chevron": ["M6 9.5l6 6 6-6"],
+    "menu": ["M4 9h16", "M4 15h16"],
+    "close": ["M6.5 6.5l11 11", "M17.5 6.5l-11 11"],
+    "plus": ["M12 5v14", "M5 12h14"],
+    "search": ["M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13z", "M15.8 15.8L20 20"],
+    "filter": ["M4 6.5h16", "M7 12h10", "M10 17.5h4"],
+    "check": ["M5 12.5l4.5 4.5L19 7.5"],
+    "copy": ["M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2z", "M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"],
+    "download": ["M12 4v11", "M7.5 10.5L12 15l4.5-4.5", "M5 19.5h14"],
+    "version": ["M3.5 11.8V5a1.5 1.5 0 0 1 1.5-1.5h6.8l8.7 8.7-8.3 8.3z", "M8.3 9.3a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"],
+
+    // ---- content types
+    "paper": ["M6 3h8l4 4v14H6z", "M14 3v4h4", "M9 12h6", "M9 15h6", "M9 18h3.5"],
+    "preprint": ["M12 3H6v18h12v-7", "M15 3h6v6", "M21 3l-8 8"],
+    "note": ["M5 3.5h14v11l-6 6H5z", "M19 14.5h-6v6", "M8 8h8", "M8 11.5h5"],
+    "dataset": ["M12 3.5c3.9 0 7 1.1 7 2.5s-3.1 2.5-7 2.5S5 7.4 5 6s3.1-2.5 7-2.5z", "M5 6v6c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6", "M5 12v6c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-6"],
+    "model": ["M12 3l8 4.5v9L12 21l-8-4.5v-9z", "M4 7.5l8 4.5 8-4.5", "M12 12v9"],
+    "programme": ["M20 12a8 8 0 1 0-8 8", "M12 4v2.5", "M4 12h2.5", "M17.66 6.34l-1.77 1.77"],
+    "demo": ["M5 4.5h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z", F("M10.2 8.2v5.6l4.6-2.8z"), "M8.5 21h7"],
+    "talk": ["M4.5 6.5h9a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 3 16V8a1.5 1.5 0 0 1 1.5-1.5z", "M15 10.5l6-3.5v10l-6-3.5"],
+    "code": ["M8.5 7.5L4 12l4.5 4.5", "M15.5 7.5L20 12l-4.5 4.5", "M13.5 5.5l-3 13"],
+    "consent": ["M6 3h8l4 4v14H6z", "M14 3v4h4", "M9 14.5l2 2 4-4.2"],
+    "licence": ["M6 3h8l4 4v5", "M14 3v4h4", "M6 3v18h6", "M16.5 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M15 20.6l-.8 1.9", "M18 20.6l.8 1.9"],
+    "cite": ["M8 16.5a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6z", "M5.7 14.2c0-3.6 1.4-6 4.3-7.2", "M16 16.5a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6z", "M13.7 14.2c0-3.6 1.4-6 4.3-7.2"],
+    "bibtex": ["M9 4C7 4 6.5 5 6.5 6.5V10c0 1.2-.8 2-2 2 1.2 0 2 .8 2 2v3.5C6.5 19 7 20 9 20", "M15 4c2 0 2.5 1 2.5 2.5V10c0 1.2.8 2 2 2-1.2 0-2 .8-2 2v3.5c0 1.5-.5 2.5-2.5 2.5"],
+    "person": ["M12 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z", "M5 20c.8-3.6 3.6-6 7-6s6.2 2.4 7 6"],
+    "calendar": ["M6 5.5h12a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2z", "M4 10h16", "M8.5 3.5v4", "M15.5 3.5v4"],
+    "place": ["M12 21s6-5.6 6-11a6 6 0 0 0-12 0c0 5.4 6 11 6 11z", "M12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"],
+
+    // ---- audio and voice
+    "play": [F("M8 5.2v13.6a.8.8 0 0 0 1.2.7l10.4-6.8a.8.8 0 0 0 0-1.4L9.2 4.5a.8.8 0 0 0-1.2.7z")],
+    "pause": [F("M7.5 5h2.6a.9.9 0 0 1 .9.9v12.2a.9.9 0 0 1-.9.9H7.5a.9.9 0 0 1-.9-.9V5.9a.9.9 0 0 1 .9-.9z"), F("M13.9 5h2.6a.9.9 0 0 1 .9.9v12.2a.9.9 0 0 1-.9.9h-2.6a.9.9 0 0 1-.9-.9V5.9a.9.9 0 0 1 .9-.9z")],
+    "stop": [F("M7.2 6h9.6A1.2 1.2 0 0 1 18 7.2v9.6a1.2 1.2 0 0 1-1.2 1.2H7.2A1.2 1.2 0 0 1 6 16.8V7.2A1.2 1.2 0 0 1 7.2 6z")],
+    "waveform": ["M4 10.5v3", "M7 8v8", "M10 5v14", "M13 8.5v7", "M16 6.5v11", "M19 10v4"],
+    "microphone": ["M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z", "M5.5 11a6.5 6.5 0 0 0 13 0", "M12 17.5V21", "M9 21h6"],
+    "microphone-off": ["M15 9.5V6a3 3 0 0 0-5.6-1.5", "M9 9v2a3 3 0 0 0 4.9 2.3", "M5.5 11a6.5 6.5 0 0 0 10.8 4.9", "M18.3 13.2c.1-.7.2-1.4.2-2.2", "M12 17.5V21", "M9 21h6", "M4 4l16 16"],
+    "volume": ["M4.5 9.5H7l4.5-3.8v12.6L7 14.5H4.5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z", "M15 9.3a3.8 3.8 0 0 1 0 5.4", "M17.6 6.6a7.6 7.6 0 0 1 0 10.8"],
+    "volume-off": ["M4.5 9.5H7l4.5-3.8v12.6L7 14.5H4.5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z", "M15.5 9.5l5 5", "M20.5 9.5l-5 5"],
+    "headphones": ["M4 16v-4a8 8 0 0 1 16 0v4", "M4 15h2.5a1 1 0 0 1 1 1v3.5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z", "M20 15h-2.5a1 1 0 0 0-1 1v3.5a1 1 0 0 0 1 1H19a1 1 0 0 0 1-1z"],
+    "transcript": ["M4 10v4", "M7 7.5v9", "M11 8h9", "M11 12h9", "M11 16h6"],
+    "phone-voice": ["M7.2 5.5H9l1.6 4.2-2.1 1.4a11.5 11.5 0 0 0 4.4 4.4l1.4-2.1 4.2 1.6v1.8a2 2 0 0 1-2.2 2A14.5 14.5 0 0 1 5.2 7.7a2 2 0 0 1 2-2.2z", "M15 3.5a5.5 5.5 0 0 1 5.5 5.5", "M15 6.8A2.2 2.2 0 0 1 17.2 9"],
+    "listening": ["M20 12a8 8 0 1 0-8 8", DOT("M12 21.7a1.7 1.7 0 1 0 0-3.4 1.7 1.7 0 0 0 0 3.4z")],
+    "spectrogram": ["M4 4v16h16", "M7.5 8h3", "M12.5 8h5", "M7.5 12h6", "M15.5 12h2", "M7.5 16h2", "M11.5 16h6"],
+    "latency": ["M12 21a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15z", "M12 13.5V10", "M10 3h4", "M18.2 6.8l1.3-1.3"],
+
+    // ---- speech research
+    "language": ["M5 4.5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6.5L8 20v-3.5H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2z", "M9.6 14.2V8c0-1.1.9-1.7 2.1-1.4", "M11.7 14.2a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"],
+    "translate": ["M4 4h9a1.5 1.5 0 0 1 1.5 1.5v5A1.5 1.5 0 0 1 13 12H8l-3 2.5V12H4a1.5 1.5 0 0 1-1.5-1.5v-5A1.5 1.5 0 0 1 4 4z", "M16.5 9.5H20a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5h-1V20l-3-2.5h-4.5A1.5 1.5 0 0 1 10 16v-1.5"],
+    "full-duplex": ["M3 9h14", "M14 6l3 3-3 3", "M21 15H7", "M10 12l-3 3 3 3"],
+    "turns": ["M3 9h10", "M11 15h10"],
+    "on-device": ["M8 3h8a1.5 1.5 0 0 1 1.5 1.5v15A1.5 1.5 0 0 1 16 21H8a1.5 1.5 0 0 1-1.5-1.5v-15A1.5 1.5 0 0 1 8 3z", "M10 9.5h4v4h-4z", "M11 17.8h2"],
+  };
+  // Aliases kept for older studies.
+  ICONS["arrow-right"] = ICONS["arrow-long"];
+  ICONS["arrow-out"] = ICONS["external"];
+  ICONS["braces"] = ICONS["bibtex"];
+  ICONS["phone"] = ICONS["phone-voice"].slice(0, 1);
+
+  function icon(name, { size = 24, label, stroke = 1.25 } = {}) {
+    const parts = ICONS[name];
+    if (!parts) throw new Error("No icon: " + name);
+    const aria = label ? `role="img" aria-label="${label}"` : 'aria-hidden="true"';
+    let i = 0;
+    const body = parts.map(p => {
+      if (typeof p === "string") return `<path d="${p}" pathLength="1" style="--i:${i++}"/>`;
+      const fill = p.fill === "dot" ? "var(--sahel, #E8935A)" : "currentColor";
+      return `<path class="ic-${p.fill}" d="${p.d}" fill="${fill}" stroke="none"/>`;
+    }).join("");
+    return `<svg class="ic ic-${name}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round" ${aria}>${body}</svg>`;
+  }
+
+export { ICONS, icon };
