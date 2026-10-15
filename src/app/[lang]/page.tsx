@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { HeroRing, GlassArt, NightArt, Blueprint } from "@/components/Art";
+import { Playground } from "@/components/Playground";
+import { playground } from "@/content/playground";
 import { Icon } from "@/components/Icon";
 import { Explorer, Rail, Reveal } from "@/components/Interactive";
 import { NewsArt, ProgrammeArt, darkArt } from "@/components/NewsArt";
@@ -26,7 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 export default async function Home({ params }: { params: Promise<{ lang: string }> }) {
   const lang = (await params).lang as Lang;
-  const c = copy[lang], h = c.home;
+  const c = copy[lang], h = c.home, pg = playground[lang];
   const L = (p: string) => lp(lang, p);
   const [lead, ...rest] = getNews(lang);
   const dataArt = [
@@ -40,7 +42,18 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
       <section className="hero" aria-labelledby="h-hero">
         <div className="haze" aria-hidden="true"><i className="b1" /><i className="b2" /><i className="b3" /><i className="b4" /><i className="b5" /><HeroRing /><span className="grain" /></div>
         <h1 id="h-hero" className="display rise">{h.hero}</h1>
-        <a className="pill lg frost cta rise d2" href="#featured">{c.common.learnMore}</a>
+        <a className="pill lg frost cta rise d2" href="#try">{c.common.learnMore}</a>
+      </section>
+
+      {/* After elevenlabs.io and openai.fm: a console to try the models (a design preview), right under the hero. */}
+      <section id="try" className="section try" aria-labelledby="h-try">
+        <div className="wrap">
+          <div className="section-head">
+            <h2 id="h-try" className="h2">{pg.title}<span className="sub">{pg.sub}</span></h2>
+            <a className="pill" href={L("/models/air")}><Icon name="play" size={16} stroke={1.6} />{pg.hearAir}</a>
+          </div>
+          <Playground lang={lang} />
+        </div>
       </section>
 
       <section id="featured" className="section" aria-label={h.featuredLabel}>

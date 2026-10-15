@@ -36,11 +36,9 @@ function CodeWindow() {
       <pre>{`curl api.namu-ai.org/v1/transcribe \\
   -H "Authorization: Bearer $NAMU_API_KEY" \\
   -F model="tatsuniya" \\
-  -F language="ha" \\
   -F file="@kira.wav"`}</pre>
       <pre className="out">{`{
   "text": "Sannu, ina kwana?",
-  "language": "ha",
   "audio_seconds": 2.4
 }`}</pre>
     </div>

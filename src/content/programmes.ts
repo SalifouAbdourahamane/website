@@ -27,10 +27,10 @@ export const programmes: Programme[] = [
   {
     slug: "hira",
     name: "Hira",
-    title: "Full-duplex conversation in Hausa",
+    title: "Full-duplex conversation in the languages of the Sahel",
     status: "Active",
-    sentence: "Speech models that listen while they speak, built for Hausa and judged against how Hausa speakers actually take turns.",
-    question: "Can a machine listen while it speaks, in Hausa, and take turns the way Hausa speakers do?",
+    sentence: "Speech models that listen while they speak, built for the languages of the Sahel and judged against how their speakers actually take turns.",
+    question: "Can a machine listen while it speaks, in the languages of the Sahel, and take turns the way their speakers do?",
     description: [
       "People do not talk in turns that wait politely for silence. They answer before a sentence ends, say “to” and “eh” while the other person is still speaking, stop when interrupted, and stretch a greeting across many exchanges because the greeting is the point. Most voice systems ignore all of this: they wait, transcribe, think, then speak.",
       "Hira is our research into full-duplex speech for Hausa: models that hear and speak at the same time. Our working system, Aïr, separates the problem in three. An ear turns Hausa speech into something a language model can read. A brain, a multilingual model whose weights we do not retrain, decides what to say. A mouth, built on Kyutai’s Moshi architecture, speaks while it keeps listening, so it can wait, stop or acknowledge.",
@@ -71,14 +71,14 @@ export const programmes: Programme[] = [
   {
     slug: "rumbu",
     name: "Rumbu",
-    title: "A consented Hausa speech commons, Niger first",
+    title: "A consented speech commons for the Sahel, Niger first",
     status: "Opening",
-    sentence: "Hausa speech collected with consent and fair pay, from the people and places public datasets leave out.",
-    question: "What would Hausa speech data look like if it were collected with the people it represents?",
+    sentence: "Speech from across the Sahel, collected with consent and fair pay, from the people and places public datasets leave out.",
+    question: "What would speech data for the Sahel look like if it were collected with the people it represents?",
     description: [
       "Most public Hausa speech data was read aloud from a script, in Nigeria, by people comfortable with a phone app. FLEURS, a benchmark many papers report, has a Hausa test set labelled Nigerian Hausa in which 620 of 621 utterances are spoken by women. That is not the Hausa our users speak, and models trained and tested on it learn a narrow version of the language.",
-      "Rumbu is our programme to build the Hausa speech that is missing, the way a community keeps a granary: together, with care, and with clear rules about who may draw from it. We will record Hausa from Niger and Nigeria in its regional varieties: conversation between two people on separate channels, speech over ordinary phone calls as well as apps, and people who do not read, prompted by pictures and questions rather than text.",
-      "Every speaker will give informed consent in Hausa, choose what their voice may be used for, and be paid for their time. Each dataset will ship with a data statement that says who is in it, how it was recorded and what it cannot support.",
+      "Rumbu is our programme to build the speech of the Sahel that is missing, the way a community keeps a granary: together, with care, and with clear rules about who may draw from it. We will record speech from Niger, Nigeria and across the Sahel in its regional varieties: conversation between two people on separate channels, speech over ordinary phone calls as well as apps, and people who do not read, prompted by pictures and questions rather than text.",
+      "Every speaker will give informed consent in their own language, choose what their voice may be used for, and be paid for their time. Each dataset will ship with a data statement that says who is in it, how it was recorded and what it cannot support.",
       "We will release what consent and law allow, and say plainly what we keep closed and why.",
     ],
     questions: [
@@ -155,7 +155,7 @@ export const programmes: Programme[] = [
     name: "Tankaɗe",
     title: "From raw audio to trustworthy data",
     status: "Active",
-    sentence: "The methods that turn radio archives, field recordings and crowd audio into Hausa and Zarma data a model can learn from and a reader can trust.",
+    sentence: "The methods that turn radio archives, field recordings and crowd audio into data a model can learn from and a reader can trust.",
     question: "Which choices in cleaning speech data change what a model learns?",
     description: [
       "Most Hausa audio in the world was never made for machines. It is radio programmes with music under the news, phone-in interviews, sermons, people reading sentences into cheap phones. Before any of it can teach a model, someone has to decide what is speech, who is speaking, what was said, how it should be spelled, and whether it may be used at all.",
@@ -195,10 +195,10 @@ export const programmes: Programme[] = [
   {
     slug: "maauni",
     name: "Maʼauni",
-    title: "Honest measurement for Hausa and Zarma speech",
+    title: "Honest measurement for speech in the languages of the Sahel",
     status: "Active",
-    sentence: "Test sets, text normalisation, listening protocols and benchmarks that make a Hausa or Zarma result mean something.",
-    question: "When is a Hausa word error rate worth trusting?",
+    sentence: "Test sets, text normalisation, listening protocols and benchmarks that make a result in a language of the Sahel mean something.",
+    question: "When is a word error rate worth trusting?",
     description: [
       "A word error rate for Hausa can change without the model changing at all. One scorer treats the apostrophe in saʼa as a space. Another deletes numbers. A transcript writes kasa where the speaker said ƙasa. A test set that is 620 of 621 women cannot tell you how a model hears men, and one recorded in Nigeria cannot tell you how it hears Niger. Most published Hausa numbers come without these conditions, so they cannot be compared, and they can flatter.",
       "Maʼauni is our measurement programme. We will publish a versioned Hausa text normaliser, with test cases, that keeps the hooked letters ɓ ɗ ƙ ƴ as the distinct sounds they are. Every result we report will come twice, strict and folded, so readers can see how much depends on spelling. We are building speaker-disjoint test sets that say which dialects, genders and phone conditions they contain, and which claims they cannot support. We run blind, randomised listening tests with native speakers, and we will report how much the listeners agreed.",

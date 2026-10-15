@@ -6,10 +6,10 @@ export const programmesFr: Programme[] = [
   {
     slug: "hira",
     name: "Hira",
-    title: "La conversation full-duplex en hausa",
+    title: "La conversation full-duplex dans les langues du Sahel",
     status: "Active",
-    sentence: "Des modèles de parole qui écoutent pendant qu’ils parlent, conçus pour le hausa et évalués d’après la façon dont les locuteurs du hausa prennent réellement la parole à tour de rôle.",
-    question: "Une machine peut-elle écouter pendant qu’elle parle, en hausa, et prendre la parole à tour de rôle comme le font les locuteurs du hausa ?",
+    sentence: "Des modèles de parole qui écoutent pendant qu’ils parlent, conçus pour les langues du Sahel et évalués d’après la façon dont leurs locuteurs prennent réellement la parole à tour de rôle.",
+    question: "Une machine peut-elle écouter pendant qu’elle parle, dans les langues du Sahel, et prendre la parole à tour de rôle comme le font leurs locuteurs ?",
     description: [
       "Les gens ne parlent pas à tour de rôle en attendant poliment le silence. Ils répondent avant la fin d’une phrase, disent « to » et « eh » pendant que l’autre parle encore, s’arrêtent quand on les interrompt, et étirent une salutation sur de nombreux échanges, parce que c’est la salutation qui compte. La plupart des systèmes vocaux ignorent tout cela : ils attendent, transcrivent, réfléchissent, puis parlent.",
       "Hira est notre travail de recherche sur la parole full-duplex en hausa : des modèles qui entendent et parlent en même temps. Notre système actuel, Aïr, découpe le problème en trois. Une oreille transforme la parole hausa en quelque chose qu’un modèle de langage peut lire. Un cerveau, un modèle multilingue dont nous ne réentraînons pas les poids, décide de ce qu’il faut dire. Une bouche, construite sur l’architecture Moshi de Kyutai, parle tout en continuant d’écouter, ce qui lui permet d’attendre, de s’arrêter ou de signaler qu’elle écoute.",
@@ -50,14 +50,14 @@ export const programmesFr: Programme[] = [
   {
     slug: "rumbu",
     name: "Rumbu",
-    title: "Un commun de parole hausa fondé sur le consentement, en commençant par le Niger",
+    title: "Un commun de parole du Sahel fondé sur le consentement, en commençant par le Niger",
     status: "Opening",
-    sentence: "De la parole hausa recueillie avec consentement et une juste rémunération, auprès des personnes et dans les lieux que les jeux de données publics laissent de côté.",
-    question: "À quoi ressembleraient les données de parole hausa si elles étaient recueillies avec les personnes qu’elles représentent ?",
+    sentence: "De la parole de tout le Sahel, recueillie avec consentement et une juste rémunération, auprès des personnes et dans les lieux que les jeux de données publics laissent de côté.",
+    question: "À quoi ressembleraient les données de parole du Sahel si elles étaient recueillies avec les personnes qu’elles représentent ?",
     description: [
       "La plupart des données publiques de parole hausa ont été lues à voix haute à partir d’un texte, au Nigeria, par des personnes à l’aise avec une application sur téléphone. FLEURS, un benchmark dont de nombreux articles rapportent les résultats, comporte un jeu de test hausa étiqueté « hausa du Nigeria », dans lequel 620 énoncés sur 621 sont prononcés par des femmes. Ce n’est pas le hausa que parlent nos utilisateurs, et les modèles entraînés et testés sur ces données apprennent une version étroite de la langue.",
-      "Rumbu est notre programme pour constituer la parole hausa qui manque, à la manière dont une communauté entretient un grenier : ensemble, avec soin, et avec des règles claires sur qui peut y puiser. Nous enregistrerons le hausa du Niger et du Nigeria dans ses variétés régionales : des conversations entre deux personnes sur des canaux séparés, de la parole transmise par des appels téléphoniques ordinaires comme par des applications, et des personnes qui ne lisent pas, invitées à parler à partir d’images et de questions plutôt que d’un texte.",
-      "Chaque personne enregistrée donnera son consentement éclairé en hausa, choisira à quoi sa voix pourra servir, et sera rémunérée pour son temps. Chaque jeu de données sera accompagné d’une déclaration de données (data statement) qui indique qui y figure, comment il a été enregistré et ce qu’il ne permet pas d’étayer.",
+      "Rumbu est notre programme pour constituer la parole du Sahel qui manque, à la manière dont une communauté entretient un grenier : ensemble, avec soin, et avec des règles claires sur qui peut y puiser. Nous enregistrerons la parole du Niger, du Nigeria et de tout le Sahel dans ses variétés régionales : des conversations entre deux personnes sur des canaux séparés, de la parole transmise par des appels téléphoniques ordinaires comme par des applications, et des personnes qui ne lisent pas, invitées à parler à partir d’images et de questions plutôt que d’un texte.",
+      "Chaque personne enregistrée donnera son consentement éclairé dans sa propre langue, choisira à quoi sa voix pourra servir, et sera rémunérée pour son temps. Chaque jeu de données sera accompagné d’une déclaration de données (data statement) qui indique qui y figure, comment il a été enregistré et ce qu’il ne permet pas d’étayer.",
       "Nous publierons ce que le consentement et la loi permettent, et dirons clairement ce que nous gardons en accès fermé, et pourquoi.",
     ],
     questions: [
@@ -134,7 +134,7 @@ export const programmesFr: Programme[] = [
     name: "Tankaɗe",
     title: "De l’audio brut à des données fiables",
     status: "Active",
-    sentence: "Les méthodes qui transforment des archives radiophoniques, des enregistrements de terrain et de l’audio participatif en données en hausa et en zarma sur lesquelles un modèle peut apprendre et auxquelles un lecteur peut se fier.",
+    sentence: "Les méthodes qui transforment des archives radiophoniques, des enregistrements de terrain et de l’audio participatif en données sur lesquelles un modèle peut apprendre et auxquelles un lecteur peut se fier.",
     question: "Quels choix de nettoyage des données de parole changent ce qu’un modèle apprend ?",
     description: [
       "La plupart de l’audio en hausa dans le monde n’a jamais été fait pour des machines. Ce sont des émissions de radio avec de la musique sous les informations, des entretiens téléphoniques à l’antenne, des prêches, des personnes qui lisent des phrases dans des téléphones bon marché. Avant que la moindre partie de cet audio puisse apprendre quoi que ce soit à un modèle, quelqu’un doit décider de ce qui est de la parole, de qui parle, de ce qui a été dit, de la façon dont cela doit s’écrire, et de la possibilité même de l’utiliser.",
@@ -174,10 +174,10 @@ export const programmesFr: Programme[] = [
   {
     slug: "maauni",
     name: "Maʼauni",
-    title: "Une mesure honnête pour la parole en hausa et en zarma",
+    title: "Une mesure honnête pour la parole dans les langues du Sahel",
     status: "Active",
-    sentence: "Des jeux de test, une normalisation du texte, des protocoles d’écoute et des benchmarks qui donnent un sens à un résultat en hausa ou en zarma.",
-    question: "Quand peut-on se fier à un taux d’erreur sur les mots (WER) en hausa ?",
+    sentence: "Des jeux de test, une normalisation du texte, des protocoles d’écoute et des benchmarks qui donnent un sens à un résultat dans une langue du Sahel.",
+    question: "Quand peut-on se fier à un taux d’erreur sur les mots (WER) ?",
     description: [
       "Un taux d’erreur sur les mots en hausa peut changer sans que le modèle change le moins du monde. Un outil d’évaluation traite l’apostrophe de saʼa comme une espace. Un autre supprime les nombres. Une transcription écrit kasa là où le locuteur a dit ƙasa. Un jeu de test où 620 énoncés sur 621 sont prononcés par des femmes ne peut pas vous dire comment un modèle entend les hommes, et un jeu enregistré au Nigeria ne peut pas vous dire comment il entend le Niger. La plupart des chiffres publiés pour le hausa sont donnés sans ces conditions : ils ne peuvent donc pas être comparés, et ils peuvent être flatteurs.",
       "Maʼauni est notre programme de mesure. Nous publierons un normaliseur de texte hausa versionné, avec des cas de test, qui conserve les lettres crochetées ɓ ɗ ƙ ƴ comme les sons distincts qu’elles sont. Chaque résultat que nous communiquerons sera donné deux fois, en mode strict et en mode replié (folded), pour que les lecteurs voient à quel point il dépend de l’orthographe. Nous construisons des jeux de test à locuteurs disjoints qui indiquent quels dialectes, genres et conditions téléphoniques ils contiennent, et quelles affirmations ils ne permettent pas d’étayer. Nous menons des tests d’écoute en aveugle et randomisés avec des locuteurs natifs, et nous indiquerons le degré d’accord entre les auditeurs.",
