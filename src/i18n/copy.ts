@@ -22,7 +22,10 @@ const en = {
   },
   nav: {
     research: "Research", models: "Models", developers: "Developers", data: "Data", organisations: "Organisations", about: "About", skip: "Skip to main content", sites: "Namu sites",
-    openMenu: "Open menu", closeMenu: "Close menu", menu: "Menu", overview: "Overview", hearAir: "Hear Aïr", language: "Language",
+    openMenu: "Open menu", closeMenu: "Close menu", menu: "Menu",
+    devIntro: "Build with the Lab’s speech models for the languages of the Sahel.", devCta: "Explore the API",
+    apiPlatform: "API platform", apiPlatformSub: "One API for listening, speaking, translation and conversation",
+    sdks: "Developer SDKs", sdksSub: "Libraries and tools for building with the API", soon: "Coming soon", overview: "Overview", hearAir: "Hear Aïr", language: "Language",
     researchIntro: "Five programmes on how machines hear, understand and answer in the languages of the Sahel.", exploreResearch: "Explore research",
     latest: "Latest research", latestSub: "Posts, notes and methods",
     modelsIntro: "Speech systems for the languages of the Sahel, built on the Lab’s research.", viewModels: "View models",
@@ -161,7 +164,10 @@ const fr: Copy = {
   },
   nav: {
     research: "Recherche", models: "Modèles", developers: "Développeurs", data: "Données", organisations: "Organisations", about: "À propos", skip: "Aller au contenu principal", sites: "Sites Namu",
-    openMenu: "Ouvrir le menu", closeMenu: "Fermer le menu", menu: "Menu", overview: "Vue d’ensemble", hearAir: "Écouter Aïr", language: "Langue",
+    openMenu: "Ouvrir le menu", closeMenu: "Fermer le menu", menu: "Menu",
+    devIntro: "Construisez avec les modèles de parole du Lab pour les langues du Sahel.", devCta: "Découvrir l’API",
+    apiPlatform: "Plateforme API", apiPlatformSub: "Une seule API pour écouter, parler, traduire et converser",
+    sdks: "SDK pour développeurs", sdksSub: "Des bibliothèques et des outils pour construire avec l’API", soon: "Bientôt", overview: "Vue d’ensemble", hearAir: "Écouter Aïr", language: "Langue",
     researchIntro: "Cinq programmes sur la façon dont les machines entendent, comprennent et répondent dans les langues du Sahel.", exploreResearch: "Explorer la recherche",
     latest: "Dernières recherches", latestSub: "Articles, notes et méthodes",
     modelsIntro: "Des systèmes de parole pour les langues du Sahel, issus des recherches du Lab.", viewModels: "Voir les modèles",

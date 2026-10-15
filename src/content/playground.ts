@@ -11,7 +11,7 @@ export type Voice = { id: string; name: string; note: string; palette: [string, 
 export type Line = { who: "you" | "air"; text: string; gloss: string };
 
 export type PlaygroundCopy = {
-  title: string; sub: string; hearAir: string;
+  sub: string;
   tabs: { id: string; label: string; model: string }[];
   preview: string; earlyAccess: string;
   speak: { script: string; voices: string; play: string; stop: string; chars: (k: number) => string; dialects: string[]; region: string; speaking: string };
@@ -80,7 +80,7 @@ export const conversation: Record<Lang, Line[]> = {
 
 export const playground: Record<Lang, PlaygroundCopy> = {
   en: {
-    title: "Try the Lab’s models", sub: "Hear, speak, translate and converse in the languages of the Sahel", hearAir: "Hear Aïr",
+    sub: "Hear, speak, translate and converse in the languages of the Sahel",
     tabs: [
       { id: "speak", label: "Speak", model: "Tafiya" }, { id: "listen", label: "Listen", model: "Tatsuniya" },
       { id: "translate", label: "Translate", model: "Kora" }, { id: "converse", label: "Converse", model: "Aïr" }, { id: "api", label: "API", model: "Developers" },
@@ -93,7 +93,7 @@ export const playground: Record<Lang, PlaygroundCopy> = {
     api: { run: "Run code", running: "Running…", output: "Output", illustrative: "Illustrative. The API is not public yet." },
   },
   fr: {
-    title: "Essayez les modèles du Lab", sub: "Écouter, parler, traduire et converser dans les langues du Sahel", hearAir: "Écouter Aïr",
+    sub: "Écouter, parler, traduire et converser dans les langues du Sahel",
     tabs: [
       { id: "speak", label: "Parler", model: "Tafiya" }, { id: "listen", label: "Écouter", model: "Tatsuniya" },
       { id: "translate", label: "Traduire", model: "Kora" }, { id: "converse", label: "Converser", model: "Aïr" }, { id: "api", label: "API", model: "Développeurs" },

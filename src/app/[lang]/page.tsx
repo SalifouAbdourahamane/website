@@ -48,10 +48,7 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
       {/* After elevenlabs.io and openai.fm: a console to try the models (a design preview), right under the hero. */}
       <section id="try" className="section try" aria-labelledby="h-try">
         <div className="wrap">
-          <div className="section-head">
-            <h2 id="h-try" className="h2">{pg.title}<span className="sub">{pg.sub}</span></h2>
-            <a className="pill" href={L("/models/air")}><Icon name="play" size={16} stroke={1.6} />{pg.hearAir}</a>
-          </div>
+          <h2 id="h-try" className="try-title">{pg.sub}</h2>
           <Playground lang={lang} />
         </div>
       </section>

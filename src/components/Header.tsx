@@ -8,7 +8,8 @@ import { models, programmeIcon, switcher } from "@/content/site";
 import { LANG_COOKIE, lp, switchPath, type Lang } from "@/i18n/config";
 import type { Copy } from "@/i18n/copy";
 
-type Menu = null | "research" | "models" | "switch" | "sheet";
+type Menu = null | "research" | "models" | "developers" | "switch" | "sheet";
+type Page = null | "research" | "models" | "developers";
 type Props = { lang: Lang; c: Pick<Copy, "nav" | "models" | "status">; programmes: { slug: string; name: string; title: string }[] };
 
 /** EN · FR. Remembers the visitor's choice so the country-based default never overrides it. */
@@ -32,11 +33,11 @@ export function Header({ lang, c, programmes }: Props) {
   const raw = usePathname() || "/";
   const path = raw.replace(/^\/(en|fr)(?=\/|$)/, "") || "/";
   const [menu, setMenu] = useState<Menu>(null);
-  const [page, setPage] = useState<null | "research" | "models">(null);   // the small-screen menu's open section
+  const [page, setPage] = useState<Page>(null);   // the small-screen menu's open section
   const [back, setBack] = useState(false);                                // which way its pages slide
   const [solid, setSolid] = useState(false);
   const bar = useRef<HTMLElement>(null);
-  const overHero = path === "/";
+  const overHero = path === "/" || path === "/api";   // pages whose hero runs up behind the bar
   const L = (p: string) => lp(lang, p);
   const n = c.nav;
 
@@ -57,7 +58,7 @@ export function Header({ lang, c, programmes }: Props) {
   }, [menu]);
 
   const toggle = (m: Menu) => setMenu(cur => (cur === m ? null : m));
-  const open = (p: "research" | "models" | null) => { setBack(p === null); setPage(p); };
+  const open = (p: Page) => { setBack(p === null); setPage(p); };
   const cls = ["hdr", solid ? "solid" : "", menu ? "open" : ""].join(" ");
   const notes = [n.switcherNotes.products, n.switcherNotes.research, n.switcherNotes.code];
   const ha = (s: string) => (/[ɗʼ]/.test(s) ? "ha" : undefined);
@@ -73,7 +74,7 @@ export function Header({ lang, c, programmes }: Props) {
         <nav className="nav" aria-label="Main">
           <button type="button" aria-expanded={menu === "research"} aria-controls="mega-research" onClick={() => toggle("research")}>{n.research} <Icon name="chevron" size={14} stroke={1.6} /></button>
           <button type="button" aria-expanded={menu === "models"} aria-controls="mega-models" onClick={() => toggle("models")}>{n.models} <Icon name="chevron" size={14} stroke={1.6} /></button>
-          <a href={L("/api")} aria-current={path.startsWith("/api") ? "page" : undefined}>{n.developers}</a>
+          <button type="button" aria-expanded={menu === "developers"} aria-controls="mega-developers" onClick={() => toggle("developers")}>{n.developers} <Icon name="chevron" size={14} stroke={1.6} /></button>
           <a href={L("/data")} aria-current={path.startsWith("/data") ? "page" : undefined}>{n.data}</a>
           <a href={L("/organisations")} aria-current={path.startsWith("/organisations") ? "page" : undefined}>{n.organisations}</a>
         </nav>
@@ -131,13 +132,34 @@ export function Header({ lang, c, programmes }: Props) {
         </div>
       </div>
 
+      <div id="mega-developers" className="mega" hidden={menu !== "developers"}>
+        <div className="wrap">
+          <div className="mega-intro">
+            <p className="h3">{n.developers}</p>
+            <p>{n.devIntro}</p>
+            <a className="pill dark" href={L("/api")}>{n.devCta}</a>
+          </div>
+          <div className="mega-list">
+            <a className="mega-item" href={L("/api")} aria-current={path.startsWith("/api") ? "page" : undefined}>
+              <span className="ic"><Icon name="code" size={22} stroke={1.4} /></span>
+              <span><b>{n.apiPlatform}</b><span>{n.apiPlatformSub}</span></span>
+            </a>
+            {/* The SDK page is not built yet: shown, not linked. */}
+            <div className="mega-item soon" aria-disabled="true">
+              <span className="ic"><Icon name="download" size={22} stroke={1.4} /></span>
+              <span><b>{n.sdks}<em>{n.soon}</em></b><span>{n.sdksSub}</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="sheet" className="sheet" hidden={menu !== "sheet"}>
         {page === null && (
           <div className={`sheet-page${back ? " from-left" : ""}`} key="root">
             <nav className="sheet-main" aria-label="Main">
               <button type="button" onClick={() => open("research")}>{n.research}</button>
               <button type="button" onClick={() => open("models")}>{n.models}</button>
-              <a href={L("/api")} aria-current={path.startsWith("/api") ? "page" : undefined}>{n.developers}</a>
+              <button type="button" onClick={() => open("developers")}>{n.developers}</button>
               <a href={L("/data")} aria-current={path.startsWith("/data") ? "page" : undefined}>{n.data}</a>
               <a href={L("/organisations")} aria-current={path.startsWith("/organisations") ? "page" : undefined}>{n.organisations}</a>
             </nav>
@@ -150,7 +172,7 @@ export function Header({ lang, c, programmes }: Props) {
         {page !== null && (
           <div className="sheet-page from-right" key={page}>
             <button className="sheet-back" type="button" onClick={() => open(null)}><Icon name="arrow-back" size={20} stroke={1.6} />{n.menu}</button>
-            <p className="sheet-label">{page === "research" ? n.research : n.models}</p>
+            <p className="sheet-label">{page === "research" ? n.research : page === "models" ? n.models : n.developers}</p>
             {page === "research" ? (
               <>
                 <nav className="sheet-main" aria-label={n.research}>
@@ -160,9 +182,14 @@ export function Header({ lang, c, programmes }: Props) {
                 <p className="sheet-label">{n.latest}</p>
                 <div className="sheet-small"><a href={L("/research#latest")}>{n.latestSub}</a></div>
               </>
-            ) : (
+            ) : page === "models" ? (
               <nav className="sheet-main" aria-label={n.models}>
                 {models.map(m => <a key={m.slug} href={L(m.href)}>{m.name}</a>)}
+              </nav>
+            ) : (
+              <nav className="sheet-main" aria-label={n.developers}>
+                <a href={L("/api")}>{n.apiPlatform}</a>
+                <span className="soon" aria-disabled="true">{n.sdks}<em>{n.soon}</em></span>
               </nav>
             )}
           </div>
