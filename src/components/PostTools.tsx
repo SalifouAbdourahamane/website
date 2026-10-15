@@ -48,7 +48,7 @@ export function ReadingProgress({ target = "article" }: { target?: string }) {
   return <div ref={bar} className="progress" aria-hidden="true" />;
 }
 
-export function Share({ title }: { title: string }) {
+export function Share({ title, label = "Share", copiedLabel = "Link copied" }: { title: string; label?: string; copiedLabel?: string }) {
   const [copied, setCopied] = useState(false);
   const onClick = async () => {
     const url = location.href;
@@ -63,7 +63,7 @@ export function Share({ title }: { title: string }) {
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M12 15V3.5" /><path d="M7.5 8L12 3.5 16.5 8" /><path d="M5 12.5v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />
       </svg>
-      {copied ? "Link copied" : "Share"}
+      {copied ? copiedLabel : label}
     </button>
   );
 }

@@ -16,11 +16,21 @@ const global: any = typeof window !== "undefined" ? window : {};
 
   const ARC = "M 104 60 A 44 44 0 1 0 60 104"; // the Blossom's arc, from the icon file
 
-  function createBlossomPlayer(root, { words, duration, label, gloss, note }) {
+  /* Every word the engine writes itself. English is the default; pass `strings` (any subset) to
+   * localise. The label, gloss and note come from the caller and are shown as given. */
+  const BLOSSOM_STRINGS = {
+    play: label => `Play ${label}`,        // button aria-labels
+    pause: label => `Pause ${label}`,
+    replay: label => `Replay ${label}`,
+    glossLang: "en",                       // lang attribute of the gloss line
+  };
+
+  function createBlossomPlayer(root, { words, duration, label, gloss, note, strings = BLOSSOM_STRINGS }) {
+    const S = { ...BLOSSOM_STRINGS, ...strings };
     const reduce = global.matchMedia && global.matchMedia("(prefers-reduced-motion: reduce)").matches;
     root.classList.add("bp");
     root.innerHTML = `
-      <button class="bp-button" type="button" aria-label="Play ${label}">
+      <button class="bp-button" type="button" aria-label="${S.play(label)}">
         <svg viewBox="0 0 120 120" aria-hidden="true">
           <path class="bp-track" d="${ARC}"/>
           <path class="bp-fill" d="${ARC}" pathLength="1"/>
@@ -33,7 +43,7 @@ const global: any = typeof window !== "undefined" ? window : {};
         <div class="bp-meta"><span class="bp-label">${label}</span><span class="bp-time">0:00 / ${fmt(duration)}</span></div>
         <p class="bp-words" lang="ha" aria-hidden="true"></p>
         <p class="sr-only" lang="ha">${words.map(w => w.w).join(" ")}</p>
-        <p class="bp-gloss" lang="en">${gloss}</p>
+        <p class="bp-gloss" lang="${S.glossLang}">${gloss}</p>
         ${note ? `<p class="bp-note">${note}</p>` : ""}
       </div>`;
     const btn = root.querySelector(".bp-button");
@@ -75,13 +85,13 @@ const global: any = typeof window !== "undefined" ? window : {};
     function play() {
       if (t >= duration) t = 0;
       started = true; playing = true; root.classList.add("is-playing");
-      btn.setAttribute("aria-label", "Pause " + label);
+      btn.setAttribute("aria-label", S.pause(label));
       if (reduce) { t = duration; render(); stop(true); return; }
       last = performance.now(); raf = requestAnimationFrame(frame);
     }
     function stop(ended) {
       playing = false; root.classList.remove("is-playing");
-      btn.setAttribute("aria-label", (ended ? "Replay " : "Play ") + label);
+      btn.setAttribute("aria-label", ended ? S.replay(label) : S.play(label));
       cancelAnimationFrame(raf);
       if (ended) { root.classList.add("is-ended"); render(); setTimeout(() => root.classList.remove("is-ended"), 1200); }
     }
@@ -90,4 +100,4 @@ const global: any = typeof window !== "undefined" ? window : {};
     return { play, pause: () => stop(false) };
   }
 
-export { createBlossomPlayer };
+export { createBlossomPlayer, BLOSSOM_STRINGS };

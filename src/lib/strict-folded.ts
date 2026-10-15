@@ -75,31 +75,50 @@ const global: any = typeof window !== "undefined" ? window : {};
     return { total, lost };
   }
 
-  function createStrictFolded(root, { reference, hypothesis }) {
+  /* Every word the engine writes. English is the default; pass `strings` (any subset) to localise.
+   * Values go into innerHTML, so they must be plain text without < or &. */
+  const STRICT_FOLDED_STRINGS = {
+    modes: "Scoring mode",                 // radiogroup aria-label
+    strict: "Strict",
+    folded: "Folded",
+    reference: "Reference",                // row label
+    hypothesis: "Model heard",             // row label
+    wer: "Word error rate",                // stat label
+    count: "Errors / words",               // stat label
+    hooks: "Hooked letters lost",          // stat label
+    ruleStrict: "Strict keeps ɓ ɗ ƙ ƴ and ʼ. A word with a missing hook is a different word.",
+    ruleFolded: "Folded maps ɓ ɗ ƙ ƴ to b d k y and drops ʼ before scoring. Hook errors disappear.",
+    lostOf: (lost, total) => `${lost} of ${total}`,
+    decimal: ".",                          // decimal separator in the WER
+    percent: "%",                          // percent sign, with any space before it
+  };
+
+  function createStrictFolded(root, { reference, hypothesis, strings = STRICT_FOLDED_STRINGS }) {
+    const S = { ...STRICT_FOLDED_STRINGS, ...strings };
     root.classList.add("sf");
     root.innerHTML = `
-      <div class="sf-controls" role="radiogroup" aria-label="Scoring mode">
-        <button type="button" role="radio" class="sf-mode" data-mode="strict" aria-checked="true">Strict</button>
-        <button type="button" role="radio" class="sf-mode" data-mode="folded" aria-checked="false">Folded</button>
+      <div class="sf-controls" role="radiogroup" aria-label="${S.modes}">
+        <button type="button" role="radio" class="sf-mode" data-mode="strict" aria-checked="true">${S.strict}</button>
+        <button type="button" role="radio" class="sf-mode" data-mode="folded" aria-checked="false">${S.folded}</button>
         <span class="sf-thumb" aria-hidden="true"></span>
       </div>
       <p class="sf-rule"></p>
       <div class="sf-rows">
-        <div class="sf-row"><span class="sf-label">Reference</span><p class="sf-words sf-ref" lang="ha"></p></div>
-        <div class="sf-row"><span class="sf-label">Model heard</span><p class="sf-words sf-hyp" lang="ha"></p></div>
+        <div class="sf-row"><span class="sf-label">${S.reference}</span><p class="sf-words sf-ref" lang="ha"></p></div>
+        <div class="sf-row"><span class="sf-label">${S.hypothesis}</span><p class="sf-words sf-hyp" lang="ha"></p></div>
       </div>
       <dl class="sf-stats">
-        <div><dt>Word error rate</dt><dd class="sf-wer"></dd></div>
-        <div><dt>Errors / words</dt><dd class="sf-count"></dd></div>
-        <div><dt>Hooked letters lost</dt><dd class="sf-hook"></dd></div>
+        <div><dt>${S.wer}</dt><dd class="sf-wer"></dd></div>
+        <div><dt>${S.count}</dt><dd class="sf-count"></dd></div>
+        <div><dt>${S.hooks}</dt><dd class="sf-hook"></dd></div>
       </dl>`;
     const $ = s => root.querySelector(s);
     const rules = {
-      strict: "Strict keeps ɓ ɗ ƙ ƴ and ʼ. A word with a missing hook is a different word.",
-      folded: "Folded maps ɓ ɗ ƙ ƴ to b d k y and drops ʼ before scoring. Hook errors disappear.",
+      strict: S.ruleStrict,
+      folded: S.ruleFolded,
     };
     const loss = hookedLoss(reference, hypothesis);
-    $(".sf-hook").textContent = `${loss.lost} of ${loss.total}`;
+    $(".sf-hook").textContent = S.lostOf(loss.lost, loss.total);
 
     function render(mode) {
       const r = score(reference, hypothesis, mode);
@@ -109,7 +128,7 @@ const global: any = typeof window !== "undefined" ? window : {};
       const word = (text, o) => `<span class="sf-w is-${o.op}${o.hook ? " is-hook" : ""}">${text || "∅"}</span>`;
       $(".sf-ref").innerHTML = r.ops.map(o => word(o.op === "ins" ? "" : o.refShown, o)).join(" ");
       $(".sf-hyp").innerHTML = r.ops.map(o => word(o.op === "del" ? "" : o.hypShown, o)).join(" ");
-      $(".sf-wer").textContent = (100 * r.wer).toFixed(1) + "%";
+      $(".sf-wer").textContent = (100 * r.wer).toFixed(1).replace(".", S.decimal) + S.percent;
       $(".sf-count").textContent = `${r.errors} / ${r.words}`;
     }
     root.querySelectorAll(".sf-mode").forEach(b => b.addEventListener("click", () => render(b.dataset.mode)));
@@ -122,4 +141,4 @@ const global: any = typeof window !== "undefined" ? window : {};
     return { render };
   }
 
-export { createStrictFolded, score as scoreWER };
+export { createStrictFolded, score as scoreWER, STRICT_FOLDED_STRINGS };

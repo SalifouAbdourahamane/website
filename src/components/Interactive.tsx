@@ -4,7 +4,7 @@ import { Children, useEffect, useRef, useState, type ReactNode } from "react";
 import { Icon } from "./Icon";
 
 /** A horizontal card rail with DeepMind's prev/next control. Scrolls natively (touch, trackpad, keys). */
-export function Rail({ children, label, className = "rail" }: { children: ReactNode; label: string; className?: string }) {
+export function Rail({ children, label, className = "rail", prev = "Previous", next = "Next" }: { children: ReactNode; label: string; className?: string; prev?: string; next?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [edge, setEdge] = useState({ start: true, end: false });
   useEffect(() => {
@@ -23,8 +23,8 @@ export function Rail({ children, label, className = "rail" }: { children: ReactN
     <>
       <div ref={ref} className={className} role="region" aria-label={label} tabIndex={0}>{children}</div>
       <div className="rail-ctrl">
-        <button type="button" aria-label="Previous" disabled={edge.start} onClick={() => go(-1)}><Icon name="chevron" size={18} stroke={1.6} className="rot90" /></button>
-        <button type="button" aria-label="Next" disabled={edge.end} onClick={() => go(1)}><Icon name="chevron" size={18} stroke={1.6} className="rot-90" /></button>
+        <button type="button" aria-label={prev} disabled={edge.start} onClick={() => go(-1)}><Icon name="chevron" size={18} stroke={1.6} className="rot90" /></button>
+        <button type="button" aria-label={next} disabled={edge.end} onClick={() => go(1)}><Icon name="chevron" size={18} stroke={1.6} className="rot-90" /></button>
       </div>
     </>
   );

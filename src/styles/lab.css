@@ -9,12 +9,12 @@
   font-weight: 100 1000; font-style: normal; font-display: swap; }
 @font-face { font-family: "Lab Sans"; src: url(/fonts/namu-hz-sans.woff2) format("woff2");
   font-weight: 100 1000; font-style: normal; font-display: swap;
-  unicode-range: U+0181, U+018A, U+0198-0199, U+019D, U+01B3-01B4, U+0253, U+0257, U+0272, U+02BC, U+0300-036F; }
+  unicode-range: U+0181, U+018A, U+0198-0199, U+019D, U+01B3-01B4, U+0253, U+0257, U+0272, U+02BC, U+0300-036F, U+2009, U+202F; }
 @font-face { font-family: "Lab Sans"; src: url(/fonts/dmsans-lab-italic.woff2) format("woff2");
   font-weight: 100 1000; font-style: italic; font-display: swap; }
 @font-face { font-family: "Lab Sans"; src: url(/fonts/namu-hz-sans.woff2) format("woff2");
   font-weight: 100 1000; font-style: italic; font-display: swap;
-  unicode-range: U+0181, U+018A, U+0198-0199, U+019D, U+01B3-01B4, U+0253, U+0257, U+0272, U+02BC, U+0300-036F; }
+  unicode-range: U+0181, U+018A, U+0198-0199, U+019D, U+01B3-01B4, U+0253, U+0257, U+0272, U+02BC, U+0300-036F, U+2009, U+202F; }
 
 :root {
   --bg: #ffffff;
@@ -462,3 +462,13 @@ a:hover .metarow .go svg { transform: translateX(calc(3px * var(--motion))); }
 .prose .callout p:last-child { margin: 0; }
 .post-foot { max-width: calc(624px + 2 * var(--gutter)); margin: 64px auto 0; padding-inline: var(--gutter); color: var(--ink-2); font-size: 15px; }
 .post-foot .row { border-top: 1px solid var(--line); padding-block: 20px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: space-between; }
+
+/* language switch (EN · FR), an Apple-style segmented control on the bar */
+.lang-switch { margin-left: auto; display: inline-flex; align-items: center; padding: 3px; border-radius: var(--r-pill); background: rgba(21, 18, 15, .06); flex: none; }
+.lang-switch a { height: 28px; min-width: 38px; padding: 0 10px; display: inline-grid; place-items: center; border-radius: var(--r-pill); text-decoration: none;
+  font-size: 13px; font-weight: 500; letter-spacing: .04em; color: var(--ink-2); transition: background-color .25s var(--ease), color .25s var(--ease), box-shadow .25s var(--ease); }
+.lang-switch a:hover { color: var(--ink); }
+.lang-switch a[aria-current="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(21, 18, 15, .12), 0 0 0 .5px rgba(21, 18, 15, .06); }
+.hdr:not(.solid):not(.open) .lang-switch { background: rgba(255, 255, 255, .4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.hdr-cta { margin-left: 12px; }
+@media (max-width: 1080px) { .menu-toggle { margin-left: 8px; } }

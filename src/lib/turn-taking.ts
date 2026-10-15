@@ -32,8 +32,21 @@ const global: any = typeof window !== "undefined" ? window : {};
     return out;
   }
 
+  /* Every word the engine writes itself. English is the default; pass `strings` (any subset)
+   * in the spec to localise. Lane labels, caption, glosses and event labels come from the spec. */
+  const TURN_TAKING_STRINGS = {
+    play: "Play the exchange",   // play button, aria-label at rest
+    pause: "Pause",              // play button, aria-label while playing
+    overlap: "overlap",          // label over the shaded overlap
+    decimal: ".",                // decimal separator in times
+    seconds: " s",               // unit after a time, with its space
+    glossLang: "en",             // lang attribute of the gloss lines
+  };
+
   function createTurnTaking(root, spec) {
     const { duration, lanes, segments, events = [], caption } = spec;
+    const S = { ...TURN_TAKING_STRINGS, ...(spec.strings || {}) };
+    const secs = (v, digits) => (digits == null ? String(v) : v.toFixed(digits)).replace(".", S.decimal) + S.seconds;
     const reduce = global.matchMedia && global.matchMedia("(prefers-reduced-motion: reduce)").matches;
     root.classList.add("tt");
     root.innerHTML = "";
@@ -41,9 +54,9 @@ const global: any = typeof window !== "undefined" ? window : {};
     const head = el("div", "tt-head");
     const play = el("button", "tt-play");
     play.type = "button";
-    play.setAttribute("aria-label", "Play the exchange");
+    play.setAttribute("aria-label", S.play);
     play.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-play" d="M8 5.5v13l10-6.5z"/><g class="i-pause"><path d="M8.5 5.5v13M15.5 5.5v13"/></g></svg>';
-    const clock = el("span", "tt-clock", "0.0 s");
+    const clock = el("span", "tt-clock", secs(0, 1));
     clock.setAttribute("aria-hidden", "true");
     head.append(play, clock);
     if (caption) head.append(el("span", "tt-caption", caption));
@@ -75,7 +88,7 @@ const global: any = typeof window !== "undefined" ? window : {};
     overlaps.forEach(([s, e]) => {
       const o = el("div", "tt-overlap");
       o.style.left = pct(s); o.style.width = pct(e - s);
-      o.append(el("span", "tt-overlap-label", "overlap"));
+      o.append(el("span", "tt-overlap-label", S.overlap));
       tracks.append(o);
     });
 
@@ -102,7 +115,7 @@ const global: any = typeof window !== "undefined" ? window : {};
     for (let t = 0; t <= duration; t++) {
       const tick = el("span", "tt-tick" + (t % 2 ? "" : " is-major"));
       tick.style.left = pct(t);
-      if (t % 2 === 0) tick.textContent = t + " s";
+      if (t % 2 === 0) tick.textContent = secs(t);
       axis.append(tick);
     }
     stage.append(axis);
@@ -121,11 +134,11 @@ const global: any = typeof window !== "undefined" ? window : {};
         const li = el("li", "tt-line");
         li.dataset.lane = s.lane;
         const who = el("span", "tt-who", lanes.find(l => l.id === s.lane).label);
-        const t = el("span", "tt-time", s.start.toFixed(1) + " s");
+        const t = el("span", "tt-time", secs(s.start, 1));
         const said = el("p", "tt-said", s.text);
         said.lang = s.lang || "ha";
         const gloss = el("p", "tt-gloss", s.gloss || "");
-        gloss.lang = "en";
+        gloss.lang = S.glossLang;
         li.append(t, who, said, gloss);
         if (s.note) li.append(el("p", "tt-note", s.note));
         list.append(li);
@@ -136,7 +149,7 @@ const global: any = typeof window !== "undefined" ? window : {};
     let t = reduce ? duration : 0, last = 0, raf = 0, playing = false;
     function render() {
       playhead.style.left = pct(t);
-      clock.textContent = t.toFixed(1) + " s";
+      clock.textContent = secs(t, 1);
       segEls.forEach((e, i) => {
         const s = segments[i];
         const p = Math.max(0, Math.min(1, (t - s.start) / (s.end - s.start)));
@@ -159,12 +172,12 @@ const global: any = typeof window !== "undefined" ? window : {};
     function start() {
       if (t >= duration) t = 0;
       playing = true; root.classList.add("is-playing");
-      play.setAttribute("aria-label", "Pause");
+      play.setAttribute("aria-label", S.pause);
       last = performance.now(); raf = requestAnimationFrame(frame);
     }
     function stop() {
       playing = false; root.classList.remove("is-playing");
-      play.setAttribute("aria-label", "Play the exchange");
+      play.setAttribute("aria-label", S.play);
       cancelAnimationFrame(raf);
     }
     play.addEventListener("click", () => (playing ? stop() : start()));
@@ -172,4 +185,4 @@ const global: any = typeof window !== "undefined" ? window : {};
     return { play: start, pause: stop, seek(v) { t = v; render(); } };
   }
 
-export { createTurnTaking };
+export { createTurnTaking, TURN_TAKING_STRINGS };
