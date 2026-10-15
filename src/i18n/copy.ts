@@ -21,8 +21,8 @@ const en = {
     about: ["About", "Namu AI Lab is the research unit of Namu, working on speech in Hausa and Zarma."],
   },
   nav: {
-    research: "Research", models: "Models", data: "Data", about: "About", skip: "Skip to main content", sites: "Namu sites",
-    openMenu: "Open menu", closeMenu: "Close menu", overview: "Overview", hearAir: "Hear Aïr", language: "Language",
+    research: "Research", models: "Models", developers: "Developers", data: "Data", organisations: "Organisations", about: "About", skip: "Skip to main content", sites: "Namu sites",
+    openMenu: "Open menu", closeMenu: "Close menu", menu: "Menu", overview: "Overview", hearAir: "Hear Aïr", language: "Language",
     researchIntro: "Five programmes on how machines hear, understand and answer in Hausa and Zarma.", exploreResearch: "Explore research",
     latest: "Latest research", latestSub: "Posts, notes and methods",
     modelsIntro: "Speech systems for Hausa and the languages around it, built on the Lab’s research.", viewModels: "View models",
@@ -160,8 +160,8 @@ const fr: Copy = {
     about: ["À propos", "Namu AI Lab est l’unité de recherche de Namu, consacrée à la parole en hausa et en zarma."],
   },
   nav: {
-    research: "Recherche", models: "Modèles", data: "Données", about: "À propos", skip: "Aller au contenu principal", sites: "Sites Namu",
-    openMenu: "Ouvrir le menu", closeMenu: "Fermer le menu", overview: "Vue d’ensemble", hearAir: "Écouter Aïr", language: "Langue",
+    research: "Recherche", models: "Modèles", developers: "Développeurs", data: "Données", organisations: "Organisations", about: "À propos", skip: "Aller au contenu principal", sites: "Sites Namu",
+    openMenu: "Ouvrir le menu", closeMenu: "Fermer le menu", menu: "Menu", overview: "Vue d’ensemble", hearAir: "Écouter Aïr", language: "Langue",
     researchIntro: "Cinq programmes sur la façon dont les machines entendent, comprennent et répondent en hausa et en zarma.", exploreResearch: "Explorer la recherche",
     latest: "Dernières recherches", latestSub: "Articles, notes et méthodes",
     modelsIntro: "Des systèmes de parole pour le hausa et les langues voisines, issus des recherches du Lab.", viewModels: "Voir les modèles",

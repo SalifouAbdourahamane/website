@@ -25,12 +25,15 @@ export function LangSwitch({ lang, label, className = "lang-switch" }: { lang: L
   );
 }
 
-/* DeepMind-pattern header: transparent over the hero, a white frosted bar once the page scrolls,
-   mega menus that drop a white sheet with icon rows, and a full-screen sheet on small screens. */
+/* DeepMind-pattern header: transparent over the hero, a white frosted bar once the page scrolls, and
+   mega menus that drop a white sheet with icon rows. On small screens a sidebar button (openai.com's
+   pattern) opens a full-screen menu of large links; Research and Models open their own page in it. */
 export function Header({ lang, c, programmes }: Props) {
   const raw = usePathname() || "/";
   const path = raw.replace(/^\/(en|fr)(?=\/|$)/, "") || "/";
   const [menu, setMenu] = useState<Menu>(null);
+  const [page, setPage] = useState<null | "research" | "models">(null);   // the small-screen menu's open section
+  const [back, setBack] = useState(false);                                // which way its pages slide
   const [solid, setSolid] = useState(false);
   const bar = useRef<HTMLElement>(null);
   const overHero = path === "/";
@@ -38,6 +41,7 @@ export function Header({ lang, c, programmes }: Props) {
   const n = c.nav;
 
   useEffect(() => { setMenu(null); }, [raw]);
+  useEffect(() => { if (menu !== "sheet") { setPage(null); setBack(false); } }, [menu]);
   useEffect(() => {
     const on = () => setSolid(!overHero || window.scrollY > 8);
     on(); window.addEventListener("scroll", on, { passive: true });
@@ -46,13 +50,14 @@ export function Header({ lang, c, programmes }: Props) {
   useEffect(() => {
     if (!menu) return;
     const key = (e: KeyboardEvent) => { if (e.key === "Escape") setMenu(null); };
-    const click = (e: MouseEvent) => { if (!bar.current?.contains(e.target as Node)) setMenu(null); };
+    const click = (e: MouseEvent) => { if (bar.current && !e.composedPath().includes(bar.current)) setMenu(null); };
     document.addEventListener("keydown", key); document.addEventListener("click", click);
     document.body.style.overflow = menu === "sheet" ? "hidden" : "";
     return () => { document.removeEventListener("keydown", key); document.removeEventListener("click", click); document.body.style.overflow = ""; };
   }, [menu]);
 
   const toggle = (m: Menu) => setMenu(cur => (cur === m ? null : m));
+  const open = (p: "research" | "models" | null) => { setBack(p === null); setPage(p); };
   const cls = ["hdr", solid ? "solid" : "", menu ? "open" : ""].join(" ");
   const notes = [n.switcherNotes.products, n.switcherNotes.research, n.switcherNotes.code];
   const ha = (s: string) => (/[ɗʼ]/.test(s) ? "ha" : undefined);
@@ -61,23 +66,24 @@ export function Header({ lang, c, programmes }: Props) {
     <header ref={bar} className={cls}>
       <a className="skip" href="#main">{n.skip}</a>
       <div className="wrap">
-        <a className="brand" href={L("/")} aria-label="Namu AI Lab"><Logo className="mark" /><span className="rule" aria-hidden="true" /><span className="lab">AI Lab</span></a>
+        <a className="brand" href={L("/")} aria-label="Namu AI Lab"><Logo className="mark" /></a>
         <button className="switch-btn" type="button" aria-expanded={menu === "switch"} aria-controls="switch-panel" aria-label={n.sites} onClick={() => toggle("switch")}>
           <Icon name="chevron" size={14} stroke={1.6} />
         </button>
         <nav className="nav" aria-label="Main">
           <button type="button" aria-expanded={menu === "research"} aria-controls="mega-research" onClick={() => toggle("research")}>{n.research} <Icon name="chevron" size={14} stroke={1.6} /></button>
           <button type="button" aria-expanded={menu === "models"} aria-controls="mega-models" onClick={() => toggle("models")}>{n.models} <Icon name="chevron" size={14} stroke={1.6} /></button>
+          <a href={L("/developers")} aria-current={path.startsWith("/developers") ? "page" : undefined}>{n.developers}</a>
           <a href={L("/data")} aria-current={path.startsWith("/data") ? "page" : undefined}>{n.data}</a>
-          <a href={L("/about")} aria-current={path.startsWith("/about") ? "page" : undefined}>{n.about}</a>
+          <a href={L("/organisations")} aria-current={path.startsWith("/organisations") ? "page" : undefined}>{n.organisations}</a>
         </nav>
         <LangSwitch lang={lang} label={n.language} />
         <div className="hdr-cta">
-          <a className="pill" href="https://www.namu-ai.org">namu-ai.org</a>
+          <a className="pill parent" href="https://www.namu-ai.org">namu-ai.org</a>
           <a className="pill" href={L("/models/air")}><Icon name="play" size={16} stroke={1.6} />{n.hearAir}</a>
         </div>
         <button className="menu-toggle" type="button" aria-expanded={menu === "sheet"} aria-controls="sheet" aria-label={menu === "sheet" ? n.closeMenu : n.openMenu} onClick={() => toggle("sheet")}>
-          <Icon name={menu === "sheet" ? "close" : "menu"} size={22} stroke={1.6} />
+          <Icon name={menu === "sheet" ? "sidebar-open" : "sidebar"} size={22} stroke={1.5} />
         </button>
       </div>
 
@@ -126,17 +132,41 @@ export function Header({ lang, c, programmes }: Props) {
       </div>
 
       <div id="sheet" className="sheet" hidden={menu !== "sheet"}>
-        <details>
-          <summary>{n.research} <Icon name="chevron" size={18} stroke={1.6} /></summary>
-          <div><a href={L("/research")}>{n.overview}</a>{programmes.map(p => <a key={p.slug} href={L(`/programmes/${p.slug}`)} lang={ha(p.name)}>{p.name}</a>)}</div>
-        </details>
-        <details>
-          <summary>{n.models} <Icon name="chevron" size={18} stroke={1.6} /></summary>
-          <div>{models.map(m => <a key={m.slug} href={L(m.href)}>{m.name}</a>)}</div>
-        </details>
-        <a href={L("/data")}>{n.data}</a>
-        <a href={L("/about")}>{n.about}</a>
-        <div className="pills"><a className="pill lg" href="https://www.namu-ai.org">namu-ai.org</a><a className="pill lg dark" href={L("/models/air")}>{n.hearAir}</a></div>
+        {page === null && (
+          <div className={`sheet-page${back ? " from-left" : ""}`} key="root">
+            <nav className="sheet-main" aria-label="Main">
+              <button type="button" onClick={() => open("research")}>{n.research}</button>
+              <button type="button" onClick={() => open("models")}>{n.models}</button>
+              <a href={L("/developers")} aria-current={path.startsWith("/developers") ? "page" : undefined}>{n.developers}</a>
+              <a href={L("/data")} aria-current={path.startsWith("/data") ? "page" : undefined}>{n.data}</a>
+              <a href={L("/organisations")} aria-current={path.startsWith("/organisations") ? "page" : undefined}>{n.organisations}</a>
+            </nav>
+            <div className="sheet-more">
+              <a href={L("/models/air")}>{n.hearAir}</a>
+              <a href="https://www.namu-ai.org">namu-ai.org <Icon name="external" size={22} stroke={1.6} /></a>
+            </div>
+          </div>
+        )}
+        {page !== null && (
+          <div className="sheet-page from-right" key={page}>
+            <button className="sheet-back" type="button" onClick={() => open(null)}><Icon name="arrow-back" size={20} stroke={1.6} />{n.menu}</button>
+            <p className="sheet-label">{page === "research" ? n.research : n.models}</p>
+            {page === "research" ? (
+              <>
+                <nav className="sheet-main" aria-label={n.research}>
+                  <a href={L("/research")}>{n.overview}</a>
+                  {programmes.map(p => <a key={p.slug} href={L(`/programmes/${p.slug}`)} lang={ha(p.name)}>{p.name}</a>)}
+                </nav>
+                <p className="sheet-label">{n.latest}</p>
+                <div className="sheet-small"><a href={L("/research#latest")}>{n.latestSub}</a></div>
+              </>
+            ) : (
+              <nav className="sheet-main" aria-label={n.models}>
+                {models.map(m => <a key={m.slug} href={L(m.href)}>{m.name}</a>)}
+              </nav>
+            )}
+          </div>
+        )}
       </div>
     </header>
   );

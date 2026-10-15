@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="6 6 112 112">
+  <!-- The Namu Blossom, drawn a little heavier so it stays legible at 16 px; the arc turns to paper on dark tab bars. -->
+  <style>path { stroke: #1C1410; } @media (prefers-color-scheme: dark) { path { stroke: #F7F0E3; } }</style>
+  <path d="M 104 60 A 44 44 0 1 0 60 104" stroke-width="11" stroke-linecap="round" fill="none"/>
+  <circle cx="60" cy="104" r="12" fill="#E8935A"/>
+</svg>
