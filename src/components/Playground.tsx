@@ -5,7 +5,7 @@
    timed animation and the footer says so. Tabs follow the WAI-ARIA tabs pattern. */
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { Icon } from "./Icon";
-import { conversation, heard, playground, scripts, translation, voices, type Voice } from "@/content/playground";
+import { conversation, playground, scripts, translation, voices, type Voice } from "@/content/playground";
 import { createListeningField } from "@/lib/field";
 import { lp, type Lang } from "@/i18n/config";
 
@@ -125,11 +125,8 @@ function Speak({ lang }: { lang: Lang }) {
 function Listen({ lang }: { lang: Lang }) {
   const t = playground[lang].listen;
   const [state, setState] = useState<"idle" | "listening" | "done">("idle");
-  const [shown, setShown] = useState(0);
-  const [mode, setMode] = useState<"strict" | "folded">("strict");
   const canvas = useRef<HTMLCanvasElement>(null);
   const field = useRef<ReturnType<typeof createListeningField> | null>(null);
-  const words = (mode === "strict" ? heard.strict : heard.folded).split(" ");
 
   useEffect(() => {
     if (!canvas.current) return;
@@ -138,12 +135,8 @@ function Listen({ lang }: { lang: Lang }) {
     return () => field.current?.pause();
   }, []);
   useEffect(() => { if (state === "listening") field.current?.play(); else field.current?.pause(); }, [state]);
-  useTicker(state === "listening", ms => {
-    const k = Math.min(words.length, Math.floor((ms - 500) / 380) + 1);
-    setShown(Math.max(0, k));
-    if (ms > 500 + words.length * 380 + 600) { setState("done"); return false; }
-  });
-  const toggle = () => { if (state === "listening") { setState("done"); setShown(words.length); } else { setShown(0); setState("listening"); } };
+  useTicker(state === "listening", ms => { if (ms > 4800) { setState("done"); return false; } });
+  const toggle = () => setState(s => (s === "listening" ? "done" : "listening"));
 
   return (
     <div className="pg-listen">
@@ -155,22 +148,6 @@ function Listen({ lang }: { lang: Lang }) {
         </button>
         <p className="pg-mic-label">{state === "idle" ? t.tap : state === "listening" ? t.listening : t.done}</p>
         <p className="pg-hint">{t.hint}</p>
-      </div>
-      <div className="pg-card pg-transcript">
-        <div className="pg-head">
-          <span className="pg-label">{t.transcript}</span>
-          <div className="pg-seg" role="group" aria-label={t.transcript}>
-            {(["strict", "folded"] as const).map(m => <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)}>{t[m]}</button>)}
-          </div>
-        </div>
-        <p className={`pg-heard${mode === "folded" ? " folded" : ""}`} lang="ha" aria-live="polite">
-          {state === "idle" ? <span className="placeholder" aria-hidden="true">{words.map((w, i) => <i key={i} style={{ width: `${Math.max(2, w.length) * .52}em` }} />)}</span> : <>
-            {words.slice(0, shown).map((w, i) => <span key={`${mode}${i}`} className="w">{w} </span>)}
-            {state === "listening" && <span className="caret" aria-hidden="true" />}
-          </>}
-        </p>
-        <p className="pg-gloss">{state === "done" ? heard.gloss[lang] : " "}</p>
-        <a className="textlink" href={lp(lang, "/research/why-we-report-every-hausa-score-twice")}><span>{t.why}</span><Icon name="arrow-long" size={16} stroke={1.6} /></a>
       </div>
     </div>
   );
