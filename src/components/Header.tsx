@@ -73,7 +73,7 @@ export function Header({ lang, c, programmes }: Props) {
         <nav className="nav" aria-label="Main">
           <button type="button" aria-expanded={menu === "research"} aria-controls="mega-research" onClick={() => toggle("research")}>{n.research} <Icon name="chevron" size={14} stroke={1.6} /></button>
           <button type="button" aria-expanded={menu === "models"} aria-controls="mega-models" onClick={() => toggle("models")}>{n.models} <Icon name="chevron" size={14} stroke={1.6} /></button>
-          <a href={L("/developers")} aria-current={path.startsWith("/developers") ? "page" : undefined}>{n.developers}</a>
+          <a href={L("/api")} aria-current={path.startsWith("/api") ? "page" : undefined}>{n.developers}</a>
           <a href={L("/data")} aria-current={path.startsWith("/data") ? "page" : undefined}>{n.data}</a>
           <a href={L("/organisations")} aria-current={path.startsWith("/organisations") ? "page" : undefined}>{n.organisations}</a>
         </nav>
@@ -137,7 +137,7 @@ export function Header({ lang, c, programmes }: Props) {
             <nav className="sheet-main" aria-label="Main">
               <button type="button" onClick={() => open("research")}>{n.research}</button>
               <button type="button" onClick={() => open("models")}>{n.models}</button>
-              <a href={L("/developers")} aria-current={path.startsWith("/developers") ? "page" : undefined}>{n.developers}</a>
+              <a href={L("/api")} aria-current={path.startsWith("/api") ? "page" : undefined}>{n.developers}</a>
               <a href={L("/data")} aria-current={path.startsWith("/data") ? "page" : undefined}>{n.data}</a>
               <a href={L("/organisations")} aria-current={path.startsWith("/organisations") ? "page" : undefined}>{n.organisations}</a>
             </nav>
