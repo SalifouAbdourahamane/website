@@ -1,16 +1,19 @@
 "use client";
 
 /* The home page console: try the Lab's models (after elevenlabs.io's hero panel and openai.fm).
-   A design preview: nothing is connected, so playback, listening and translation are simulated with
-   timed animation and the footer says so. Tabs follow the WAI-ARIA tabs pattern. */
+   Speak, Listen, Translate and the API tab are live: the browser calls /api/demo/*, which adds the server-held
+   demo key; the gateway caps the demo at 15 s of audio and 300 characters per request, and limits each visitor.
+   Converse stays a scripted preview while Aïr is in research. Tabs follow the WAI-ARIA tabs pattern. */
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { Icon } from "./Icon";
-import { conversation, playground, scripts, translation, voices, type Voice } from "@/content/playground";
+import { conversation, playground, scripts, translation, voices, type PlaygroundCopy, type Voice } from "@/content/playground";
 import { createListeningField } from "@/lib/field";
 import { lp, type Lang } from "@/i18n/config";
+import { apiBase } from "@/lib/supabase/env";
 
 type Tab = "speak" | "listen" | "translate" | "converse" | "api";
 const reduced = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const DEMO_SECONDS = 14.5;   // the gateway refuses demo audio over 15 s
 
 /* A loudness envelope with the rhythm of speech: syllables about 190 ms apart, gathered into words. */
 const envelope = (t: number) => {
@@ -31,6 +34,97 @@ function useTicker(on: boolean, tick: (ms: number) => boolean | void) {
   }, [on]);
 }
 
+/* ---------------------------------------------------------------- talking to the demo */
+class DemoError extends Error {}
+function demoMessage(e: unknown, t: PlaygroundCopy["errors"]): string {
+  const status = e instanceof DemoError ? Number(e.message) : 0;
+  if (status === 429) return t.limited;
+  if (status === 413) return t.tooLong;
+  if (status === 503 || status === 404) return t.unavailable;
+  return t.failed;
+}
+async function demo(model: "speech" | "transcribe" | "translate", body: Blob | object, query = ""): Promise<Response> {
+  const isAudio = body instanceof Blob;
+  const res = await fetch(`/api/demo/${model}${query}`, {
+    method: "POST",
+    headers: { "Content-Type": isAudio ? (body.type || "application/octet-stream") : "application/json" },
+    body: isAudio ? body : JSON.stringify(body),
+  });
+  if (!res.ok) throw new DemoError(String(res.status));
+  return res;
+}
+const b64wav = (b64: string) => new Blob([Uint8Array.from(atob(b64), c => c.charCodeAt(0))], { type: "audio/wav" });
+
+/* One microphone take, stopped by the caller or at the demo's length limit. */
+function useRecorder(onDone: (audio: Blob) => void, onDenied: () => void) {
+  const rec = useRef<MediaRecorder | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const done = useRef(onDone); done.current = onDone;
+  const stop = () => { if (timer.current) clearTimeout(timer.current); if (rec.current?.state === "recording") rec.current.stop(); };
+  const start = async () => {
+    let stream: MediaStream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } }); }
+    catch { onDenied(); return false; }
+    const r = new MediaRecorder(stream);
+    const parts: BlobPart[] = [];
+    r.ondataavailable = e => { if (e.data.size) parts.push(e.data); };
+    r.onstop = () => { stream.getTracks().forEach(x => x.stop()); done.current(new Blob(parts, { type: r.mimeType || "audio/webm" })); };
+    rec.current = r; r.start();
+    timer.current = setTimeout(stop, DEMO_SECONDS * 1000);
+    return true;
+  };
+  useEffect(() => () => stop(), []);
+  return { start, stop };
+}
+
+/* Plays a clip and reports its loudness each frame, so the orb moves with the real voice. */
+function usePlayer() {
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const analyser = useRef<AnalyserNode | null>(null);
+  const buf = useRef<Uint8Array<ArrayBuffer> | null>(null);
+  const url = useRef<string | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [amp, setAmp] = useState(0);
+  const ensure = () => {
+    if (audio.current) return audio.current;
+    const a = new Audio();
+    a.onended = a.onpause = () => { setPlaying(false); setAmp(0); };
+    a.onplay = () => setPlaying(true);
+    try {
+      const ctx = new AudioContext();
+      const node = ctx.createAnalyser(); node.fftSize = 512;
+      ctx.createMediaElementSource(a).connect(node); node.connect(ctx.destination);
+      analyser.current = node;
+      a.addEventListener("play", () => { void ctx.resume(); });
+    } catch { /* no Web Audio: the orb stays still, the sound still plays */ }
+    audio.current = a;
+    return a;
+  };
+  useTicker(playing, () => {
+    const a = audio.current;
+    if (!a) return false;
+    setProgress(a.duration ? a.currentTime / a.duration : 0);
+    const node = analyser.current;
+    if (node && !reduced()) {
+      buf.current ??= new Uint8Array(new ArrayBuffer(node.fftSize));
+      node.getByteTimeDomainData(buf.current);
+      let sum = 0; for (const v of buf.current) sum += ((v - 128) / 128) ** 2;
+      setAmp(Math.min(1, Math.sqrt(sum / buf.current.length) * 4));
+    }
+  });
+  const play = (blob: Blob) => {
+    const a = ensure();
+    if (url.current) URL.revokeObjectURL(url.current);
+    url.current = URL.createObjectURL(blob);
+    a.src = url.current; setProgress(0);
+    void a.play();
+  };
+  const stop = () => { audio.current?.pause(); setProgress(0); };
+  useEffect(() => () => { audio.current?.pause(); if (url.current) URL.revokeObjectURL(url.current); }, []);
+  return { play, stop, playing, progress, amp };
+}
+
 /* A glowing voice orb: a slowly turning swirl of the voice's colours under a glass highlight and grain. */
 function Orb({ v, size, amp = 0, className = "", children }: { v: Pick<Voice, "palette">; size: number; amp?: number; className?: string; children?: ReactNode }) {
   const [c1, c2, c3] = v.palette;
@@ -44,28 +138,35 @@ function Orb({ v, size, amp = 0, className = "", children }: { v: Pick<Voice, "p
 
 /* ---------------------------------------------------------------- Speak (Tafiya) */
 function Speak({ lang }: { lang: Lang }) {
-  const t = playground[lang].speak, ss = scripts[lang], vs = voices[lang];
+  const c = playground[lang], t = c.speak, ss = scripts[lang], vs = voices[lang];
   const [sid, setSid] = useState(ss[0].id);
   const [text, setText] = useState(ss[0].text);
   const [vi, setVi] = useState(0);
-  const [dialect, setDialect] = useState(0);
-  const [playing, setPlaying] = useState(false);
-  const [pos, setPos] = useState(0);          // words spoken, fractional
-  const [amp, setAmp] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const cache = useRef(new Map<string, Blob>());
+  const player = usePlayer();
   const words = text.trim().split(/\s+/);
-  const perWord = 340;
   const script = ss.find(s => s.id === sid);
   const unchanged = script?.text === text;
+  const v = vs[vi], other = vs[(vi + 1) % vs.length];
+  const pos = player.progress * words.length;
 
-  useTicker(playing, ms => {
-    const p = ms / perWord;
-    if (p >= words.length + .6) { setPlaying(false); setAmp(0); setPos(0); return false; }
-    setPos(p); setAmp(reduced() ? 0 : envelope(ms / 1000));
-  });
-  const pick = (id: string) => { const s = ss.find(x => x.id === id)!; setSid(id); setText(s.text); setPlaying(false); setPos(0); };
-  const turn = (d: number) => { setVi(i => (i + d + vs.length) % vs.length); };
-  const v = vs[vi], prev = vs[(vi - 1 + vs.length) % vs.length], next = vs[(vi + 1) % vs.length];
-  const progress = playing ? Math.min(1, pos / words.length) : 0;
+  const pick = (id: string) => { const s = ss.find(x => x.id === id)!; setSid(id); setText(s.text); player.stop(); };
+  const turn = () => { player.stop(); setVi(i => (i + 1) % vs.length); };
+  async function toggle() {
+    if (player.playing) { player.stop(); return; }
+    const k = `${v.id}\n${text.trim()}`;
+    setError(null);
+    let clip = cache.current.get(k);
+    if (!clip) {
+      setLoading(true);
+      try { clip = await (await demo("speech", { text: text.trim(), voice: v.id })).blob(); cache.current.set(k, clip); }
+      catch (e) { setError(demoMessage(e, c.errors)); return; }
+      finally { setLoading(false); }
+    }
+    player.play(clip);
+  }
 
   return (
     <div className="pg-speak">
@@ -76,7 +177,7 @@ function Speak({ lang }: { lang: Lang }) {
             {ss.map(s => <button key={s.id} type="button" aria-pressed={s.id === sid} onClick={() => pick(s.id)}>{s.label}</button>)}
           </div>
         </div>
-        {playing ? (
+        {player.playing ? (
           <p className="pg-text pg-read" lang="ha" aria-live="off">
             {words.map((w, i) => <span key={i} className={i < Math.floor(pos) ? "said" : i === Math.floor(pos) ? "now" : undefined}>{w} </span>)}
           </p>
@@ -84,38 +185,34 @@ function Speak({ lang }: { lang: Lang }) {
           <textarea className="pg-text" lang="ha" value={text} maxLength={240} spellCheck={false} aria-label={t.script}
             onChange={e => { setText(e.target.value); }} />
         )}
-        <p className="pg-gloss">{unchanged ? script?.gloss : " "}</p>
-        <div className="pg-foot">
-          <span>{t.chars(text.length)}</span>
-          <div className="pg-seg" role="group" aria-label={t.region}>
-            {t.dialects.map((d, i) => <button key={d} type="button" aria-pressed={i === dialect} onClick={() => setDialect(i)}>{d}</button>)}
-          </div>
-        </div>
+        <p className="pg-gloss">{unchanged ? script?.gloss : " "}</p>
+        <div className="pg-foot"><span>{t.chars(text.length)}</span></div>
       </div>
 
       <div className="pg-voices">
         <span className="pg-label">{t.voices}</span>
         <div className="pg-carousel">
-          <button type="button" className="pg-arrow" aria-label="Previous voice" onClick={() => turn(-1)}><Icon name="chevron" size={18} stroke={1.6} className="rot90" /></button>
-          <button type="button" className="pg-side" aria-label={prev.name} onClick={() => turn(-1)}><Orb v={prev} size={92} /></button>
+          <button type="button" className="pg-arrow" aria-label="Previous voice" onClick={turn}><Icon name="chevron" size={18} stroke={1.6} className="rot90" /></button>
+          <button type="button" className="pg-side" aria-label={other.name} onClick={turn}><Orb v={other} size={92} /></button>
           <div className="pg-main">
             <svg className="pg-ring" viewBox="0 0 120 120" aria-hidden="true">
               <circle cx="60" cy="60" r="56" pathLength={1} className="track" />
-              <circle cx="60" cy="60" r="56" pathLength={1} className="fill" style={{ strokeDashoffset: 1 - progress }} />
+              <circle cx="60" cy="60" r="56" pathLength={1} className="fill" style={{ strokeDashoffset: 1 - (player.playing ? player.progress : 0) }} />
             </svg>
-            <Orb v={v} size={196} amp={amp} className={playing ? "live" : ""}>
-              <button type="button" className="pg-play" aria-label={playing ? t.stop : `${t.play}: ${v.name}`} onClick={() => { setPos(0); setPlaying(p => !p); }}>
-                <Icon name={playing ? "pause" : "play"} size={22} stroke={1.8} />
+            <Orb v={v} size={196} amp={player.amp} className={player.playing || loading ? "live" : ""}>
+              <button type="button" className="pg-play" aria-label={player.playing ? t.stop : `${t.play}: ${v.name}`} onClick={toggle} disabled={loading || !text.trim()}>
+                <Icon name={player.playing ? "pause" : "play"} size={22} stroke={1.8} />
               </button>
             </Orb>
           </div>
-          <button type="button" className="pg-side" aria-label={next.name} onClick={() => turn(1)}><Orb v={next} size={92} /></button>
-          <button type="button" className="pg-arrow" aria-label="Next voice" onClick={() => turn(1)}><Icon name="chevron" size={18} stroke={1.6} className="rot-90" /></button>
+          <button type="button" className="pg-side" aria-label={other.name} onClick={turn}><Orb v={other} size={92} /></button>
+          <button type="button" className="pg-arrow" aria-label="Next voice" onClick={turn}><Icon name="chevron" size={18} stroke={1.6} className="rot-90" /></button>
         </div>
-        <p className="pg-voice"><b>{v.name}</b><span>{playing ? `${t.speaking}…` : v.note}</span></p>
-        <button type="button" className="pg-big" onClick={() => { setPos(0); setPlaying(p => !p); }}>
-          <Icon name={playing ? "stop" : "play"} size={20} stroke={1.8} />{playing ? t.stop : t.play}
+        <p className="pg-voice"><b>{v.name}</b><span>{loading ? c.live.working : player.playing ? `${t.speaking}…` : v.note}</span></p>
+        <button type="button" className="pg-big" onClick={toggle} disabled={loading || !text.trim()}>
+          <Icon name={player.playing ? "stop" : "play"} size={20} stroke={1.8} />{loading ? c.live.working : player.playing ? t.stop : t.play}
         </button>
+        {error && <p className="pg-error" role="alert">{error}</p>}
       </div>
     </div>
   );
@@ -123,10 +220,17 @@ function Speak({ lang }: { lang: Lang }) {
 
 /* ---------------------------------------------------------------- Listen (Tatsuniya) */
 function Listen({ lang }: { lang: Lang }) {
-  const t = playground[lang].listen;
-  const [state, setState] = useState<"idle" | "listening" | "done">("idle");
+  const c = playground[lang], t = c.listen;
+  const [state, setState] = useState<"idle" | "listening" | "working" | "done">("idle");
+  const [heard, setHeard] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const field = useRef<ReturnType<typeof createListeningField> | null>(null);
+  const rec = useRecorder(async audio => {
+    setState("working");
+    try { setHeard(((await (await demo("transcribe", audio)).json()) as { text?: string }).text?.trim() || "…"); setState("done"); }
+    catch (e) { setError(demoMessage(e, c.errors)); setState("idle"); }
+  }, () => { setError(c.errors.micDenied); setState("idle"); });
 
   useEffect(() => {
     if (!canvas.current) return;
@@ -134,20 +238,28 @@ function Listen({ lang }: { lang: Lang }) {
     field.current.pause();
     return () => field.current?.pause();
   }, []);
-  useEffect(() => { if (state === "listening") field.current?.play(); else field.current?.pause(); }, [state]);
-  useTicker(state === "listening", ms => { if (ms > 4800) { setState("done"); return false; } });
-  const toggle = () => setState(s => (s === "listening" ? "done" : "listening"));
+  useEffect(() => { if (state === "listening" || state === "working") field.current?.play(); else field.current?.pause(); }, [state]);
+  async function toggle() {
+    if (state === "listening") { rec.stop(); return; }
+    if (state === "working") return;
+    setError(null); setHeard("");
+    if (await rec.start()) setState("listening");
+  }
+  const label = state === "idle" ? t.tap : state === "listening" ? c.live.recording : state === "working" ? c.live.working : t.done;
 
   return (
     <div className="pg-listen">
       <div className="pg-card pg-mic-card">
         <canvas ref={canvas} className="pg-field" aria-hidden="true" />
-        <button type="button" className={`pg-mic ${state}`} aria-pressed={state === "listening"} onClick={toggle}>
+        <button type="button" className={`pg-mic ${state === "working" ? "listening" : state}`} aria-pressed={state === "listening"} onClick={toggle} disabled={state === "working"}>
           <i aria-hidden="true" /><i aria-hidden="true" /><Icon name={state === "listening" ? "stop" : "microphone"} size={30} stroke={1.5} />
-          <span className="sr-only">{state === "listening" ? t.listening : t.tap}</span>
+          <span className="sr-only">{label}</span>
         </button>
-        <p className="pg-mic-label">{state === "idle" ? t.tap : state === "listening" ? t.listening : t.done}</p>
-        <p className="pg-hint">{t.hint}</p>
+        <p className="pg-mic-label" aria-live="polite">{label}</p>
+        {heard ? (
+          <p className="pg-result" aria-live="polite"><span className="pg-label">{t.transcript}</span><span className="said" lang="ha">{heard}</span></p>
+        ) : <p className="pg-hint">{t.hint}</p>}
+        {error && <p className="pg-error" role="alert">{error}</p>}
       </div>
     </div>
   );
@@ -155,32 +267,54 @@ function Listen({ lang }: { lang: Lang }) {
 
 /* ---------------------------------------------------------------- Translate (Kora) */
 function Translate({ lang }: { lang: Lang }) {
-  const t = playground[lang].translate;
-  const [flip, setFlip] = useState(false);
-  const [running, setRunning] = useState(false);
-  const [typed, setTyped] = useState(0);
-  const src = flip ? translation.fr : translation.ha, dst = flip ? translation.ha : translation.fr;
+  const c = playground[lang], t = c.translate;
+  const [flip, setFlip] = useState(false);              // false: Hausa → French
+  const [state, setState] = useState<"idle" | "listening" | "working" | "done">("idle");
+  const [out, setOut] = useState<{ src: string; dst: string; audio: Blob | null } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const player = usePlayer();
+  const rec = useRecorder(async audio => {
+    setState("working");
+    try {
+      const j = await (await demo("translate", audio, `?target=${flip ? "ha" : "fr"}`)).json() as { source_text?: string; text?: string; audio?: string };
+      setOut({ src: j.source_text ?? "", dst: j.text ?? "", audio: j.audio ? b64wav(j.audio) : null }); setState("done");
+    } catch (e) { setError(demoMessage(e, c.errors)); setState("idle"); }
+  }, () => { setError(c.errors.micDenied); setState("idle"); });
+
   const names = flip ? [t.to, t.from] : [t.from, t.to];
-  useTicker(running, ms => { const k = Math.min(dst.length, Math.floor(ms / 28)); setTyped(k); if (k >= dst.length) { setRunning(false); return false; } });
-  const run = () => { setTyped(0); setRunning(true); };
+  const sample = flip ? translation.fr : translation.ha, sampleOut = flip ? translation.ha : translation.fr;
+  async function toggle() {
+    if (state === "listening") { rec.stop(); return; }
+    if (state === "working") return;
+    setError(null); setOut(null); player.stop();
+    if (await rec.start()) setState("listening");
+  }
+  const label = state === "listening" ? c.live.recording : state === "working" ? c.live.working : state === "done" ? c.live.again : c.live.record;
 
   return (
     <div className="pg-translate">
       <div className="pg-card pg-pane">
-        <div className="pg-head"><span className="pg-lang">{names[0]}</span><span className="pg-icons"><Icon name="microphone" size={18} stroke={1.5} /><Icon name="volume" size={18} stroke={1.5} /></span></div>
-        <p className="pg-text pg-src" lang={flip ? "fr" : "ha"}>{src}</p>
+        <div className="pg-head"><span className="pg-lang">{names[0]}</span><span className="pg-icons"><Icon name="microphone" size={18} stroke={1.5} /></span></div>
+        <p className={`pg-text pg-src${out ? "" : " muted"}`} lang={flip ? "fr" : "ha"}>{out ? out.src : sample}</p>
       </div>
-      <button type="button" className="pg-swap" aria-label={t.swap} onClick={() => { setFlip(f => !f); setTyped(0); setRunning(false); }}><Icon name="full-duplex" size={20} stroke={1.5} /></button>
+      <button type="button" className="pg-swap" aria-label={t.swap} onClick={() => { setFlip(f => !f); setOut(null); setState("idle"); player.stop(); }} disabled={state === "listening" || state === "working"}><Icon name="full-duplex" size={20} stroke={1.5} /></button>
       <div className="pg-card pg-pane out">
-        <div className="pg-head"><span className="pg-lang">{names[1]}</span><button type="button" className="pg-listen-btn" disabled={typed < dst.length}><Icon name="volume" size={18} stroke={1.5} />{t.listen}</button></div>
-        <p className="pg-text" lang={flip ? "ha" : "fr"}>{dst.slice(0, typed)}{running && <span className="caret" aria-hidden="true" />}</p>
+        <div className="pg-head"><span className="pg-lang">{names[1]}</span>
+          <button type="button" className="pg-listen-btn" disabled={!out?.audio} onClick={() => out?.audio && player.play(out.audio)}><Icon name="volume" size={18} stroke={1.5} />{t.listen}</button>
+        </div>
+        <p className={`pg-text${out ? "" : " muted"}`} lang={flip ? "ha" : "fr"} aria-live="polite">{out ? out.dst : state === "working" ? <span className="caret" aria-hidden="true" /> : sampleOut}</p>
       </div>
-      <div className="pg-translate-go"><button type="button" className="pg-big" onClick={run}><Icon name="translate" size={20} stroke={1.6} />{t.run}</button></div>
+      <div className="pg-translate-go">
+        <button type="button" className="pg-big" onClick={toggle} disabled={state === "working"}>
+          <Icon name={state === "listening" ? "stop" : "microphone"} size={20} stroke={1.6} />{label}
+        </button>
+        {error && <p className="pg-error" role="alert">{error}</p>}
+      </div>
     </div>
   );
 }
 
-/* ---------------------------------------------------------------- Converse (Aïr) */
+/* ---------------------------------------------------------------- Converse (Aïr): a scripted preview */
 function Converse({ lang }: { lang: Lang }) {
   const t = playground[lang].converse, lines = conversation[lang];
   const [state, setState] = useState<"idle" | "connecting" | "live">("idle");
@@ -222,47 +356,67 @@ function Converse({ lang }: { lang: Lang }) {
           </li>
         ))}
       </ol>
+      <p className="pg-note">{playground[lang].converseNote}</p>
     </div>
   );
 }
 
-/* ---------------------------------------------------------------- API */
+/* ---------------------------------------------------------------- API: real requests, run on the demo */
+const SAMPLE = "Barka da safiya! Ga labaran yau.";
+const host = apiBase.replace(/^https?:\/\//, "");
 const CODE: Record<string, ReactNode> = {
   Python: <>
-    <span className="k">from</span> namu <span className="k">import</span> Namu{"\n\n"}client = Namu(){"\n"}audio = client.speech.create({"\n"}
-    {"    "}model=<span className="s">&quot;tafiya&quot;</span>,{"\n"}{"    "}voice=<span className="s">&quot;warm&quot;</span>,{"\n"}    {"    "}text=<span className="s hl" lang="ha">&quot;Barka da safiya! Ga labaran yau.&quot;</span>,{"\n"}){"\n"}audio.save(<span className="s">&quot;labarai.wav&quot;</span>)
+    <span className="k">import</span> os, requests{"\n\n"}r = requests.post({"\n"}{"    "}<span className="s">&quot;https://{host}/v1/speech&quot;</span>,{"\n"}
+    {"    "}headers={"{"}<span className="s">&quot;Authorization&quot;</span>: <span className="s">f&quot;Bearer {"{"}os.environ[&apos;NAMU_API_KEY&apos;]{"}"}&quot;</span>{"}"},{"\n"}
+    {"    "}json={"{"}<span className="s">&quot;voice&quot;</span>: <span className="s">&quot;nadia&quot;</span>, <span className="s">&quot;text&quot;</span>: <span className="s hl" lang="ha">&quot;{SAMPLE}&quot;</span>{"}"},{"\n"}){"\n"}
+    open(<span className="s">&quot;labarai.wav&quot;</span>, <span className="s">&quot;wb&quot;</span>).write(r.content)
   </>,
   JavaScript: <>
-    <span className="k">import</span> Namu <span className="k">from</span> <span className="s">&quot;namu&quot;</span>;{"\n\n"}<span className="k">const</span> client = <span className="k">new</span> Namu();{"\n"}
-    <span className="k">const</span> audio = <span className="k">await</span> client.speech.create({"{"}{"\n"}{"  "}model: <span className="s">&quot;tafiya&quot;</span>,{"\n"}{"  "}voice: <span className="s">&quot;warm&quot;</span>,{"\n"}
-    {"  "}text: <span className="s hl" lang="ha">&quot;Barka da safiya! Ga labaran yau.&quot;</span>,{"\n"}{"}"});
+    <span className="k">const</span> r = <span className="k">await</span> fetch(<span className="s">&quot;https://{host}/v1/speech&quot;</span>, {"{"}{"\n"}{"  "}method: <span className="s">&quot;POST&quot;</span>,{"\n"}
+    {"  "}headers: {"{"} Authorization: <span className="s">`Bearer ${"{"}process.env.NAMU_API_KEY{"}"}`</span>, <span className="s">&quot;Content-Type&quot;</span>: <span className="s">&quot;application/json&quot;</span> {"}"},{"\n"}
+    {"  "}body: JSON.stringify({"{"} voice: <span className="s">&quot;nadia&quot;</span>, text: <span className="s hl" lang="ha">&quot;{SAMPLE}&quot;</span> {"}"}),{"\n"}{"}"});{"\n"}
+    <span className="k">const</span> wav = <span className="k">await</span> r.arrayBuffer();
   </>,
   cURL: <>
-    curl api.namu-ai.org/v1/speech \{"\n"}{"  "}-H <span className="s">&quot;Authorization: Bearer $NAMU_API_KEY&quot;</span> \{"\n"}{"  "}-d <span className="s">{"'{"}&quot;model&quot;: &quot;tafiya&quot;, &quot;voice&quot;: &quot;warm&quot;,</span>{"\n"}
-    {"       "}<span className="s">&quot;text&quot;: </span><span className="s hl" lang="ha">&quot;Barka da safiya! Ga labaran yau.&quot;</span><span className="s">{"}'"}</span> \{"\n"}{"  "}-o labarai.wav
+    curl https://{host}/v1/speech \{"\n"}{"  "}-H <span className="s">&quot;Authorization: Bearer $NAMU_API_KEY&quot;</span> \{"\n"}{"  "}-H <span className="s">&quot;Content-Type: application/json&quot;</span> \{"\n"}
+    {"  "}-d <span className="s">{"'{"}&quot;voice&quot;: &quot;nadia&quot;, &quot;text&quot;: </span><span className="s hl" lang="ha">&quot;{SAMPLE}&quot;</span><span className="s">{"}'"}</span> \{"\n"}{"  "}-o labarai.wav
   </>,
 };
 function Api({ lang }: { lang: Lang }) {
-  const t = playground[lang].api;
+  const c = playground[lang], t = c.api;
   const [tab, setTab] = useState("Python");
   const [state, setState] = useState<"idle" | "running" | "done">("idle");
-  useTicker(state === "running", ms => { if (ms > 1100) { setState("done"); return false; } });
+  const [clip, setClip] = useState<{ blob: Blob; seconds: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const player = usePlayer();
+  async function run() {
+    setState("running"); setError(null);
+    try {
+      const res = await demo("speech", { text: SAMPLE, voice: "nadia" });
+      const blob = await res.blob();
+      setClip({ blob, seconds: res.headers.get("x-audio-seconds") ?? "" }); setState("done"); player.play(blob);
+    } catch (e) { setError(demoMessage(e, c.errors)); setState("idle"); }
+  }
   return (
     <div className="pg-api">
       <div className="pg-code">
         <div className="pg-code-head">
           <div className="pg-seg" role="group" aria-label="Language">
-            {Object.keys(CODE).map(k => <button key={k} type="button" aria-pressed={k === tab} onClick={() => { setTab(k); setState("idle"); }}>{k}</button>)}
+            {Object.keys(CODE).map(k => <button key={k} type="button" aria-pressed={k === tab} onClick={() => setTab(k)}>{k}</button>)}
           </div>
-          <button type="button" className="pg-run" onClick={() => setState("running")} disabled={state === "running"}>
+          <button type="button" className="pg-run" onClick={run} disabled={state === "running"}>
             <Icon name="play" size={16} stroke={1.8} />{state === "running" ? t.running : t.run}
           </button>
         </div>
         <pre>{CODE[tab]}</pre>
         <div className={`pg-out ${state}`} aria-live="polite">
           <span className="pg-label">{t.output}</span>
-          {state === "idle" ? <span className="muted">—</span> : state === "running" ? <span className="muted">{t.running}</span> : (
-            <span className="pg-file"><Icon name="waveform" size={18} stroke={1.5} />labarai.wav<span className="bars" aria-hidden="true">{Array.from({ length: 28 }, (_, i) => <i key={i} style={{ height: `${6 + Math.round(16 * Math.abs(Math.sin(i * 1.3) * Math.cos(i * .4)))}px` }} />)}</span><span className="muted">2.6 s</span></span>
+          {error ? <span className="pg-error">{error}</span> : state === "idle" ? <span className="muted">—</span> : state === "running" ? <span className="muted">{t.running}</span> : clip && (
+            <button type="button" className="pg-file pg-listen-btn" onClick={() => player.play(clip.blob)}>
+              <Icon name="waveform" size={18} stroke={1.5} />labarai.wav
+              <span className="bars" aria-hidden="true">{Array.from({ length: 28 }, (_, i) => <i key={i} style={{ height: `${6 + Math.round(16 * Math.abs(Math.sin(i * 1.3) * Math.cos(i * .4)))}px` }} />)}</span>
+              {clip.seconds && <span className="muted">{Number(clip.seconds).toFixed(1)} s</span>}
+            </button>
           )}
         </div>
       </div>
@@ -303,7 +457,7 @@ export function Playground({ lang }: { lang: Lang }) {
       </div>
       <div className="pg-footer">
         <span><i aria-hidden="true" />{c.preview}</span>
-        <a href={lp(lang, "/api")}>{c.earlyAccess}<Icon name="arrow-long" size={16} stroke={1.6} /></a>
+        <a href={lp(lang, "/account/keys")}>{c.earlyAccess}<Icon name="arrow-long" size={16} stroke={1.6} /></a>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
-/* The home page console: a design preview of trying the Lab's models (after elevenlabs.io's hero panel
-   and openai.fm). Nothing here is connected to a model; the console says so in its footer.
+/* The home page console: try the Lab's models (after elevenlabs.io's hero panel and openai.fm).
+   Speak, Listen and Translate are live (through /api/demo, with the demo's limits); Converse is a scripted preview.
    HA-REVIEW: every Hausa sentence below was written for this preview and needs a native speaker's check.
    FR-REVIEW: drafted French, to be reviewed by a native French speaker before publication. */
 import type { Lang } from "@/i18n/config";
@@ -13,12 +13,14 @@ export type Line = { who: "you" | "air"; text: string; gloss: string };
 export type PlaygroundCopy = {
   sub: string;
   tabs: { id: string; label: string; model: string }[];
-  preview: string; earlyAccess: string;
+  preview: string; earlyAccess: string; converseNote: string;
   speak: { script: string; voices: string; play: string; stop: string; chars: (k: number) => string; dialects: string[]; region: string; speaking: string };
   listen: { tap: string; listening: string; done: string; strict: string; folded: string; transcript: string; why: string; hint: string };
   translate: { from: string; to: string; swap: string; run: string; listen: string };
   converse: { start: string; end: string; you: string; air: string; status: string; connecting: string };
   api: { run: string; running: string; output: string; illustrative: string };
+  errors: { unavailable: string; limited: string; tooLong: string; failed: string; micDenied: string };
+  live: { working: string; heard: string; record: string; recording: string; again: string; play: string };
 };
 
 export const scripts: Record<Lang, Script[]> = {
@@ -36,18 +38,15 @@ export const scripts: Record<Lang, Script[]> = {
   ],
 };
 
+/* The two voices of the live API (GET /v1/voices): Nadia and Salim, both Hausa. */
 export const voices: Record<Lang, Voice[]> = {
   en: [
-    { id: "warm", name: "Warm", note: "Even and close, for reading", palette: ["#f29a5f", "#ffd8b8", "#b4552a"] },
-    { id: "bright", name: "Bright", note: "Clear and quick, for news", palette: ["#ffd27f", "#fff1d6", "#e8935a"] },
-    { id: "calm", name: "Calm", note: "Slow and steady, for care", palette: ["#e3b3c9", "#fcf2ef", "#bd7193"] },
-    { id: "story", name: "Storyteller", note: "Lively, for tales", palette: ["#7a4325", "#f6b48a", "#1c1410"] },
+    { id: "nadia", name: "Nadia", note: "Hausa · warm and even", palette: ["#f29a5f", "#ffd8b8", "#b4552a"] },
+    { id: "salim", name: "Salim", note: "Hausa · deep and steady", palette: ["#7a4325", "#f6b48a", "#1c1410"] },
   ],
   fr: [
-    { id: "warm", name: "Chaleureuse", note: "Égale et proche, pour la lecture", palette: ["#f29a5f", "#ffd8b8", "#b4552a"] },
-    { id: "bright", name: "Claire", note: "Nette et vive, pour l’info", palette: ["#ffd27f", "#fff1d6", "#e8935a"] },
-    { id: "calm", name: "Posée", note: "Lente et sûre, pour le soin", palette: ["#e3b3c9", "#fcf2ef", "#bd7193"] },
-    { id: "story", name: "Conteuse", note: "Vivante, pour les contes", palette: ["#7a4325", "#f6b48a", "#1c1410"] },
+    { id: "nadia", name: "Nadia", note: "Haoussa · chaleureuse et égale", palette: ["#f29a5f", "#ffd8b8", "#b4552a"] },
+    { id: "salim", name: "Salim", note: "Haoussa · grave et posé", palette: ["#7a4325", "#f6b48a", "#1c1410"] },
   ],
 };
 
@@ -85,12 +84,15 @@ export const playground: Record<Lang, PlaygroundCopy> = {
       { id: "speak", label: "Speak", model: "Tafiya" }, { id: "listen", label: "Listen", model: "Tatsuniya" },
       { id: "translate", label: "Translate", model: "Kora" }, { id: "converse", label: "Converse", model: "Aïr" }, { id: "api", label: "API", model: "Developers" },
     ],
-    preview: "Design preview. These demos are not connected to the models yet.", earlyAccess: "Request early access",
+    preview: "Live demo · short clips, limited per visitor", earlyAccess: "Get an API key",
+    converseNote: "Preview: Aïr is in research, so this conversation is scripted.",
     speak: { script: "Script", voices: "Voice", play: "Play", stop: "Stop", chars: k => `${k} characters`, dialects: ["Niger", "Nigeria"], region: "Region", speaking: "Speaking" },
     listen: { tap: "Tap to speak", listening: "Listening…", done: "Tap to try again", strict: "Strict", folded: "Folded", transcript: "Transcript", why: "Why we keep both", hint: "Say something in your language" },
     translate: { from: "Your language", to: "French", swap: "Swap languages", run: "Translate", listen: "Listen" },
     converse: { start: "Start a conversation", end: "End", you: "You", air: "Aïr", status: "Aïr · In research", connecting: "Connecting…" },
-    api: { run: "Run code", running: "Running…", output: "Output", illustrative: "Illustrative. The API is not public yet." },
+    api: { run: "Run code", running: "Running…", output: "Output", illustrative: "Runs on the live demo. In your app, your own key takes the demo’s place." },
+    errors: { unavailable: "The live demo is not available right now.", limited: "Demo limit reached for now. Get an API key to keep going.", tooLong: "Keep it under 15 seconds for the demo.", failed: "The model did not answer. Try again in a moment.", micDenied: "Allow the microphone to try this." },
+    live: { working: "Working…", heard: "Heard", record: "Tap to speak", recording: "Listening… tap to stop", again: "Tap to try again", play: "Play" },
   },
   fr: {
     sub: "Écouter, parler, traduire et converser dans les langues du Sahel",
@@ -98,11 +100,14 @@ export const playground: Record<Lang, PlaygroundCopy> = {
       { id: "speak", label: "Parler", model: "Tafiya" }, { id: "listen", label: "Écouter", model: "Tatsuniya" },
       { id: "translate", label: "Traduire", model: "Kora" }, { id: "converse", label: "Converser", model: "Aïr" }, { id: "api", label: "API", model: "Développeurs" },
     ],
-    preview: "Aperçu de conception. Ces démonstrations ne sont pas encore reliées aux modèles.", earlyAccess: "Demander un accès anticipé",
+    preview: "Démo en direct · extraits courts, limités par visiteur", earlyAccess: "Obtenir une clé d’API",
+    converseNote: `Aperçu${n}: Aïr est en recherche, cette conversation est donc scénarisée.`,
     speak: { script: "Texte", voices: "Voix", play: "Lire", stop: "Arrêter", chars: k => `${k} caractères`, dialects: ["Niger", "Nigeria"], region: "Région", speaking: "Lecture" },
     listen: { tap: "Touchez pour parler", listening: "Écoute…", done: "Touchez pour recommencer", strict: "Strict", folded: "Replié", transcript: "Transcription", why: "Pourquoi garder les deux", hint: "Dites quelque chose dans votre langue" },
     translate: { from: "Votre langue", to: "Français", swap: "Inverser les langues", run: "Traduire", listen: "Écouter" },
     converse: { start: "Démarrer une conversation", end: "Terminer", you: "Vous", air: "Aïr", status: "Aïr · En recherche", connecting: "Connexion…" },
-    api: { run: "Exécuter", running: "Exécution…", output: "Résultat", illustrative: "Exemple illustratif. L’API n’est pas encore publique." },
+    api: { run: "Exécuter", running: "Exécution…", output: "Résultat", illustrative: "S’exécute sur la démo en direct. Dans votre application, votre propre clé remplace celle de la démo." },
+    errors: { unavailable: "La démo en direct n’est pas disponible pour le moment.", limited: "Limite de la démo atteinte. Obtenez une clé d’API pour continuer.", tooLong: "Moins de 15 secondes pour la démo.", failed: "Le modèle n’a pas répondu. Réessayez dans un instant.", micDenied: "Autorisez le micro pour essayer." },
+    live: { working: "Traitement…", heard: "Entendu", record: "Touchez pour parler", recording: "Écoute… touchez pour arrêter", again: "Touchez pour recommencer", play: "Écouter" },
   },
 };
