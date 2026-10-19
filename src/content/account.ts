@@ -9,8 +9,8 @@ export type AccountCopy = {
   nav: { keys: string; usage: string; docs: string; admin: string; signOut: string; signIn: string; dashboard: string };
   notConfigured: string;
   login: {
-    meta: [string, string]; eyebrow: string; h1: string; lede: string; email: string; send: string; sending: string;
-    sent: (email: string) => string; or: string; google: string; github: string; error: string; terms: string;
+    meta: [string, string]; eyebrow: string; h1: string; lede: string; sending: string;
+    google: string; github: string; error: string; terms: string; none: string;
   };
   beta: {
     pendingH: string; pendingBody: string; useCase: string; useCasePh: string; save: string; saved: string;
@@ -41,11 +41,9 @@ export const accountCopy: Record<Lang, AccountCopy> = {
     login: {
       meta: ["Sign in", "Sign in to the Namu API to create keys and see your usage."],
       eyebrow: "Namu API · Private beta", h1: "Sign in to build with Namu",
-      lede: "We send a sign-in link to your email. No password to remember.",
-      email: "Work email", send: "Email me a sign-in link", sending: "Sending…",
-      sent: e => `Check ${e}. The link signs you in on this device.`, or: "or",
-      google: "Continue with Google", github: "Continue with GitHub",
-      error: "We could not send the link. Check the address and try again.",
+      lede: "Use your GitHub or Google account. We never see your password.",
+      sending: "Opening…", google: "Continue with Google", github: "Continue with GitHub",
+      error: "Sign-in did not complete. Try again.", none: "Sign-in is not switched on for this deployment yet.",
       terms: "The API is in private beta: after you sign in, we review each request by hand.",
     },
     beta: {
@@ -91,11 +89,9 @@ export const accountCopy: Record<Lang, AccountCopy> = {
     login: {
       meta: ["Connexion", "Connectez-vous à l’API Namu pour créer des clés et suivre votre consommation."],
       eyebrow: "API Namu · Bêta privée", h1: "Connectez-vous pour construire avec Namu",
-      lede: "Nous envoyons un lien de connexion à votre adresse. Aucun mot de passe à retenir.",
-      email: "Adresse professionnelle", send: "Recevoir un lien de connexion", sending: "Envoi…",
-      sent: e => `Consultez ${e}. Le lien vous connecte sur cet appareil.`, or: "ou",
-      google: "Continuer avec Google", github: "Continuer avec GitHub",
-      error: "Le lien n’a pas pu être envoyé. Vérifiez l’adresse et réessayez.",
+      lede: "Utilisez votre compte GitHub ou Google. Nous ne voyons jamais votre mot de passe.",
+      sending: "Ouverture…", google: "Continuer avec Google", github: "Continuer avec GitHub",
+      error: "La connexion n’a pas abouti. Réessayez.", none: "La connexion n’est pas encore activée sur ce déploiement.",
       terms: "L’API est en bêta privée : après votre connexion, nous examinons chaque demande à la main.".replace(" :", `${n}:`),
     },
     beta: {

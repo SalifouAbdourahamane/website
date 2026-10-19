@@ -22,7 +22,7 @@ characters and status codes, never content.
 
 The FastAPI app is built by `create_app(store, upstream, limiter)` so the
 security rules can be tested with fakes (platform/tests/test_gateway.py),
-without Modal, Supabase or a GPU.
+without Modal, a database or a GPU.
 """
 
 # No `from __future__ import annotations` here: it turns `request: Request` into
@@ -423,35 +423,36 @@ def create_app(store, upstream, limiter, pepper: str, *, audio_seconds=probe_sec
 
 
 # ---------------------------------------------------------------- real backends
-class SupabaseStore:
-    """Keys and usage in Supabase, through two SECURITY DEFINER functions
-    (supabase/migrations/0001_developer_api.sql) called with the service key."""
+class PostgresStore:
+    """Keys and usage in Neon Postgres, through two SECURITY DEFINER functions
+    (db/migrations/0001_namu_api.sql). The connection uses the namu_gateway role,
+    which may call those two functions and nothing else."""
 
-    def __init__(self, url: str, service_key: str):
-        import httpx
+    def __init__(self, url: str):
+        from psycopg_pool import ConnectionPool
 
-        self.http = httpx.Client(base_url=f"{url}/rest/v1", timeout=10,
-                                 headers={"apikey": service_key,
-                                          "Authorization": f"Bearer {service_key}"})
+        # prepare_threshold=None: no server-side prepared statements, so Neon's
+        # pooled (PgBouncer) endpoint is safe to use.
+        self.pool = ConnectionPool(url, min_size=1, max_size=4, open=True,
+                                   kwargs={"prepare_threshold": None, "connect_timeout": 10})
 
     def lookup(self, key_hash: str) -> KeyRecord | None:
-        r = self.http.post("/rpc/namu_key_lookup", json={"p_hash": key_hash})
-        r.raise_for_status()
-        rows = r.json()
-        if not rows:
+        with self.pool.connection() as c:
+            x = c.execute("select key_id, user_id, scopes, revoked, is_demo, rate_limit_per_min, "
+                          "beta_status, monthly_audio_seconds, used_audio_seconds "
+                          "from public.namu_key_lookup(%s::text)", (key_hash,)).fetchone()
+        if x is None:
             return None
-        x = rows[0]
-        return KeyRecord(x["key_id"], x["user_id"], list(x["scopes"] or []), bool(x["revoked"]),
-                         bool(x["is_demo"]), int(x["rate_limit_per_min"]), x["beta_status"],
-                         float(x["monthly_audio_seconds"]), float(x["used_audio_seconds"]))
+        return KeyRecord(str(x[0]), x[1], list(x[2] or []), bool(x[3]), bool(x[4]), int(x[5]),
+                         x[6], float(x[7]), float(x[8]))
 
     def record(self, u: Usage) -> None:
         try:
-            self.http.post("/rpc/namu_record_usage", json={
-                "p_key_id": u.key_id, "p_user_id": u.user_id, "p_endpoint": u.endpoint,
-                "p_model": u.model, "p_audio_seconds": u.audio_seconds,
-                "p_characters": u.characters, "p_status": u.status,
-                "p_latency_ms": u.latency_ms})
+            with self.pool.connection() as c:
+                c.execute("select public.namu_record_usage(%s::uuid, %s::text, %s::text, %s::text, "
+                          "%s::numeric, %s::int, %s::int, %s::int)",
+                          (u.key_id, u.user_id, u.endpoint, u.model, u.audio_seconds,
+                           u.characters, u.status, u.latency_ms))
         except Exception as e:                 # metering must never fail a request
             print(f"usage record failed: {type(e).__name__}", flush=True)
 
@@ -520,13 +521,13 @@ class DictLimiter:
 image = (
     modal.Image.debian_slim(python_version="3.11")
     .apt_install("ffmpeg")                     # ffprobe: audio length before any GPU work
-    .pip_install("fastapi[standard]", "httpx")
+    .pip_install("fastapi[standard]", "httpx", "psycopg[binary]==3.2.13", "psycopg-pool==3.2.8")
 )
 
 
 @app.function(
     image=image,
-    secrets=[modal.Secret.from_name("namu-supabase"),
+    secrets=[modal.Secret.from_name("namu-db"),
              modal.Secret.from_name("namu-key-pepper")]
     + ([modal.Secret.from_name("namu-proxy-auth")] if REQUIRE_PROXY_AUTH else []),
     min_containers=1,                          # the front door should never cold-start
@@ -536,7 +537,7 @@ image = (
 )
 @modal.asgi_app()
 def api():
-    store = SupabaseStore(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_ROLE_KEY"])
+    store = PostgresStore(os.environ["GATEWAY_DATABASE_URL"])
     upstream = ModalUpstream(UPSTREAM, os.environ.get("MODAL_PROXY_KEY"),
                              os.environ.get("MODAL_PROXY_SECRET"))
     limiter = DictLimiter(modal.Dict.from_name("namu-gateway-ratelimit", create_if_missing=True))

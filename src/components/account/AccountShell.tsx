@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { lp, type Lang } from "@/i18n/config";
 import { accountCopy } from "@/content/account";
+import { SignOut } from "./LoginForm";
 
-/* The frame of every account page: title, the dashboard's tabs, and sign-out (a POST, so links cannot sign you out). */
+/* The frame of every account page: title, the dashboard's tabs, and sign-out. */
 export function AccountShell({ lang, active, admin, h1, lede, children }:
   { lang: Lang; active: "keys" | "usage" | "admin"; admin: boolean; h1: string; lede: string; children: ReactNode }) {
   const t = accountCopy[lang].nav;
@@ -18,7 +19,7 @@ export function AccountShell({ lang, active, admin, h1, lede, children }:
           {tabs.map(x => <li key={x.id}><a href={x.href} aria-current={x.id === active ? "page" : undefined}>{x.label}</a></li>)}
           <li><a href={lp(lang, "/docs")}>{t.docs}</a></li>
         </ul>
-        <form action="/api/auth/signout" method="post"><button type="submit" className="pill">{t.signOut}</button></form>
+        <SignOut label={t.signOut} />
       </nav>
       <header className="acct-head">
         <h1 className="h1">{h1}</h1>

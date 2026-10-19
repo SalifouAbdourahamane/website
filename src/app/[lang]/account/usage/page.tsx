@@ -3,7 +3,8 @@ import { AccountShell, NotConfigured } from "@/components/account/AccountShell";
 import { accountCopy } from "@/content/account";
 import { isLang, type Lang } from "@/i18n/config";
 import { requireAccount } from "@/lib/account";
-import { hasSupabase } from "@/lib/supabase/env";
+import { sql } from "@/lib/db";
+import { hasAccounts } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -13,25 +14,22 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return { title, description, robots: { index: false } };
 }
 
-type Event = { endpoint: string; audio_seconds: number | string; characters: number; status: number };
+type Event = { endpoint: string; requests: number; errors: number; audio_seconds: string; characters: number };
 const ENDPOINTS = ["transcribe", "speech", "translate", "converse"];
 
 export default async function Usage({ params }: { params: Promise<{ lang: string }> }) {
   const lang = (await params).lang as Lang;
-  if (!hasSupabase()) return <NotConfigured lang={lang} />;
-  const { supabase, profile } = await requireAccount(lang, "/account/usage");
+  if (!hasAccounts()) return <NotConfigured lang={lang} />;
+  const { user, profile } = await requireAccount(lang, "/account/usage");
   const t = accountCopy[lang].usage;
 
-  const now = new Date();
-  const month = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
-  const { data } = await supabase.from("usage_events").select("endpoint, audio_seconds, characters, status")
-    .gte("created_at", month).limit(20000);
+  // Totals since the first of the month (UTC), the same window the gateway's quota uses.
+  const totals = await sql<Event>(`select endpoint, count(*)::int as requests, count(*) filter (where status >= 400)::int as errors,
+      coalesce(sum(audio_seconds), 0) as audio_seconds, coalesce(sum(characters), 0)::int as characters
+    from public.usage_events where user_id = $1 and created_at >= date_trunc('month', now()) group by endpoint`, [user.id]);
   const rows = ENDPOINTS.map(ep => {
-    const ev = ((data ?? []) as Event[]).filter(e => e.endpoint === ep);
-    return {
-      ep, requests: ev.length, errors: ev.filter(e => e.status >= 400).length,
-      audio: ev.reduce((s, e) => s + Number(e.audio_seconds), 0) / 60, chars: ev.reduce((s, e) => s + e.characters, 0),
-    };
+    const t = totals.find(x => x.endpoint === ep);
+    return { ep, requests: t?.requests ?? 0, errors: t?.errors ?? 0, audio: Number(t?.audio_seconds ?? 0) / 60, chars: t?.characters ?? 0 };
   });
   const used = rows.reduce((s, r) => s + r.audio, 0);
   const nf = new Intl.NumberFormat(lang === "fr" ? "fr-FR" : "en-GB", { maximumFractionDigits: 1 });

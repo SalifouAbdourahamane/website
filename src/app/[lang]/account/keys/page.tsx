@@ -5,8 +5,9 @@ import { KeysManager } from "@/components/account/KeysManager";
 import { accountCopy } from "@/content/account";
 import { isLang, type Lang } from "@/i18n/config";
 import { requireAccount } from "@/lib/account";
-import { KEY_COLUMNS, type KeyRow } from "@/lib/keys";
-import { apiBase, hasSupabase } from "@/lib/supabase/env";
+import { sql } from "@/lib/db";
+import { KEY_COLUMNS, type KeyRow } from "@/lib/key-shape";
+import { apiBase, hasAccounts } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -18,18 +19,18 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 export default async function Keys({ params }: { params: Promise<{ lang: string }> }) {
   const lang = (await params).lang as Lang;
-  if (!hasSupabase()) return <NotConfigured lang={lang} />;
-  const { supabase, profile } = await requireAccount(lang, "/account/keys");
+  if (!hasAccounts()) return <NotConfigured lang={lang} />;
+  const { user, profile } = await requireAccount(lang, "/account/keys");
   const t = accountCopy[lang].keys;
-  // Read through RLS as the user: only their rows, and never the key_hash column.
-  const { data } = profile.beta_status === "approved"
-    ? await supabase.from("api_keys").select(KEY_COLUMNS).order("created_at", { ascending: false })
-    : { data: [] };
+  // Only this user's rows, and never the key_hash column.
+  const data = profile.beta_status === "approved"
+    ? await sql<KeyRow>(`select ${KEY_COLUMNS} from public.api_keys where user_id = $1 order by created_at desc`, [user.id])
+    : [];
 
   return (
     <AccountShell lang={lang} active="keys" admin={profile.role === "admin"} h1={t.h1} lede={t.lede}>
       {profile.beta_status === "approved"
-        ? <KeysManager lang={lang} initial={(data ?? []) as KeyRow[]} apiBase={apiBase} />
+        ? <KeysManager lang={lang} initial={data} apiBase={apiBase} />
         : <BetaRequest lang={lang} status={profile.beta_status} useCase={profile.use_case} />}
     </AccountShell>
   );

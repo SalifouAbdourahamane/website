@@ -9,7 +9,7 @@ import { Icon } from "./Icon";
 import { conversation, playground, scripts, translation, voices, type PlaygroundCopy, type Voice } from "@/content/playground";
 import { createListeningField } from "@/lib/field";
 import { lp, type Lang } from "@/i18n/config";
-import { apiBase } from "@/lib/supabase/env";
+import { apiBase } from "@/lib/env";
 
 type Tab = "speak" | "listen" | "translate" | "converse" | "api";
 const reduced = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;

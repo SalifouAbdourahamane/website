@@ -1,47 +1,38 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { useState } from "react";
+import { authClient } from "@/lib/auth-client";
 import { accountCopy } from "@/content/account";
 import type { Lang } from "@/i18n/config";
 
-type Provider = "google" | "github";
+type Provider = "github" | "google";
 
-/* Email magic link, plus Google and GitHub when NEXT_PUBLIC_AUTH_PROVIDERS lists them (e.g. "google,github"). */
-export function LoginForm({ lang, next, providers, linkError }: { lang: Lang; next: string; providers: Provider[]; linkError: boolean }) {
+/* Sign in with GitHub or Google: whichever have OAuth credentials on the server. */
+export function LoginForm({ lang, next, providers }: { lang: Lang; next: string; providers: Provider[] }) {
   const t = accountCopy[lang].login;
-  const [email, setEmail] = useState("");
-  const [state, setState] = useState<"idle" | "sending" | "sent" | "error">(linkError ? "error" : "idle");
-  const callback = () => `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(next)}`;
+  const [busy, setBusy] = useState<Provider | null>(null);
+  const [error, setError] = useState(false);
 
-  async function send(e: FormEvent) {
-    e.preventDefault();
-    setState("sending");
-    const { error } = await supabaseBrowser().auth.signInWithOtp({ email: email.trim(), options: { emailRedirectTo: callback() } });
-    setState(error ? "error" : "sent");
-  }
-  async function oauth(provider: Provider) {
-    await supabaseBrowser().auth.signInWithOAuth({ provider, options: { redirectTo: callback() } });
+  async function go(provider: Provider) {
+    setBusy(provider); setError(false);
+    const { error } = await authClient.signIn.social({ provider, callbackURL: next, errorCallbackURL: `${window.location.pathname}?error=1` });
+    if (error) { setError(true); setBusy(null); }       // on success the browser is already on its way to the provider
   }
 
-  if (state === "sent") return <p className="acct-note" role="status">{t.sent(email.trim())}</p>;
+  if (providers.length === 0) return <p className="acct-note">{t.none}</p>;
   return (
     <div className="acct-login">
-      <form onSubmit={send} className="acct-form">
-        <label className="field">
-          <span>{t.email}</span>
-          <input type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.org" />
-        </label>
-        <button type="submit" className="pill lg dark" disabled={state === "sending"}>{state === "sending" ? t.sending : t.send}</button>
-        {state === "error" && <p className="acct-error" role="alert">{t.error}</p>}
-      </form>
-      {providers.length > 0 && <>
-        <p className="acct-or"><span>{t.or}</span></p>
-        <div className="acct-oauth">
-          {providers.includes("google") && <button type="button" className="pill lg" onClick={() => oauth("google")}>{t.google}</button>}
-          {providers.includes("github") && <button type="button" className="pill lg" onClick={() => oauth("github")}>{t.github}</button>}
-        </div>
-      </>}
+      <div className="acct-oauth">
+        {providers.includes("github") && <button type="button" className="pill lg dark" disabled={busy !== null} onClick={() => go("github")}>{busy === "github" ? t.sending : t.github}</button>}
+        {providers.includes("google") && <button type="button" className="pill lg" disabled={busy !== null} onClick={() => go("google")}>{busy === "google" ? t.sending : t.google}</button>}
+      </div>
+      {error && <p className="acct-error" role="alert">{t.error}</p>}
     </div>
+  );
+}
+
+export function SignOut({ label }: { label: string }) {
+  return (
+    <button type="button" className="pill" onClick={async () => { await authClient.signOut(); window.location.href = "/"; }}>{label}</button>
   );
 }
